@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ワイヤーフレーム</title>
+<style>
+  :root {
+    --back: #b87333; --chest: #d9b13b; --legs: #6ab0e0; --arms: #c8445a;
+    --accent: #3b82f6; --red: #e63b2e; --line: #d8d8dc; --muted: #9a9aa2;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; padding: 24px; background: #e9e9ee; font-family: -apple-system, "Hiragino Sans", sans-serif; color: #111; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  p.note { font-size: 12px; color: #555; margin: 0 0 20px; }
+  .stage { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+  .label { font-size: 12px; color: #555; margin-bottom: 8px; }
+  .phone { width: 390px; height: 780px; background: #fff; border-radius: 40px; border: 10px solid #1c1c1e; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+  .status { height: 44px; flex: none; }
+  .screen { flex: 1; display: none; flex-direction: column; min-height: 0; }
+  .screen.active { display: flex; }
+  .scroll { flex: 1; overflow-y: auto; }
+  .tabbar { flex: none; height: 64px; border-top: 1px solid var(--line); display: flex; background: #f8f8fa; }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: var(--muted); gap: 2px; }
+  .tab.on { color: var(--accent); font-weight: 600; }
+  .tab i { font-style: normal; font-size: 20px; }
+
+  /* ホーム */
+  .topbar { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 14px 10px; }
+  .seg { display: flex; background: #eee; border-radius: 10px; padding: 3px; }
+  .seg button { border: 0; background: transparent; padding: 8px 16px; border-radius: 8px; font-size: 14px; min-height: 36px; }
+  .seg button.on { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.15); font-weight: 600; }
+  .plus { width: 44px; height: 44px; border-radius: 22px; border: 0; background: #eee; font-size: 24px; }
+  .group { padding: 10px 12px 2px; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 6px 10px 10px; }
+  .card { border: 0; border-left: 5px solid var(--pc); background: #f4f4f7; border-radius: 6px; padding: 5px 6px; text-align: left; min-width: 0; min-height: 48px; }
+  .card .name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .meta { font-size: 11px; color: #555; margin-top: 2px; }
+  .card .days { font-size: 14px; font-weight: 700; color: var(--red); }
+
+  /* 記録 */
+  .nav { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 14px 10px; background: var(--red); color: #fff; font-weight: 600; }
+  .nav button { background: none; border: 0; color: #fff; font-size: 15px; min-height: 40px; padding: 0 4px; }
+  .prev { padding: 8px 18px; font-size: 13px; color: #555; }
+  .set { border-bottom: 1px solid var(--line); padding: 8px 14px; min-height: 112px; }
+  .row { display: flex; align-items: center; gap: 8px; min-height: 56px; }
+  .no { width: 18px; font-size: 18px; }
+  .copy { width: 32px; height: 32px; border-radius: 16px; border: 0; background: #f2b6b0; color: #fff; font-size: 16px; flex: none; }
+  .cell { flex: 1; min-height: 44px; border: 0; border-bottom: 2px solid var(--line); background: none; font-size: 22px; font-weight: 700; text-align: right; padding: 0 4px; }
+  .cell.ghost { color: #c4c4c8; }
+  .cell.focus { border-bottom-color: var(--red); }
+  .unit { font-size: 13px; color: #555; }
+  .done { width: 44px; height: 44px; border-radius: 22px; border: 2px solid var(--line); background: #fff; color: var(--line); font-size: 22px; flex: none; }
+  .done.on { background: #34c759; border-color: #34c759; color: #fff; }
+  .sub { font-size: 12px; color: var(--muted); }
+  .pr { background: #f5c518; color: #5a4300; font-size: 11px; font-weight: 700; border-radius: 8px; padding: 2px 6px; }
+  .memo { flex: 1; min-height: 40px; border: 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .addset { margin: 14px auto; display: block; background: #34c759; color: #fff; border: 0; border-radius: 24px; padding: 14px 24px; font-size: 15px; font-weight: 600; min-height: 48px; }
+  /* キーパッド */
+  .pad { flex: none; background: #f2f2f6; border-top: 1px solid var(--line); padding: 8px; display: none; }
+  .pad.open { display: block; }
+  .pad .adj { display: flex; gap: 6px; margin-bottom: 6px; }
+  .pad .adj button { flex: 1; min-height: 44px; border-radius: 8px; border: 0; background: #dcdce2; font-size: 15px; font-weight: 600; }
+  .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .keys button { min-height: 48px; border: 0; border-radius: 8px; background: #fff; font-size: 20px; }
+  .keys .ok { background: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+<h1>筋トレ記録アプリ ワイヤーフレーム</h1>
+<p class="note">タップで動きます。カードで記録画面へ移動、✓ でセット完了、↪ で前の値を引き継ぎ、値をタップするとキーパッド。仕様は ux-design.md を参照。</p>
+
+<div class="stage">
+  <div>
+    <div class="label">1. 種目グリッド(ホーム)</div>
+    <div class="phone" id="phoneHome">
+      <div class="status"></div>
+      <div class="screen active" id="home">
+        <div class="topbar">
+          <div class="seg"><button id="segDay" class="on">経過日数</button><button id="segPart">部位</button></div>
+          <button class="plus" aria-label="種目を追加">＋</button>
+        </div>
+        <div class="scroll" id="gridWrap"></div>
+        <div class="tabbar">
+          <div class="tab on"><i>🏋️</i>種目</div><div class="tab"><i>📅</i>履歴</div><div class="tab"><i>📈</i>分析</div><div class="tab"><i>⚙️</i>設定</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label">2. 種目の記録</div>
+    <div class="phone" id="phoneRec">
+      <div class="status"></div>
+      <div class="screen active" id="rec">
+        <div class="nav"><button id="back">‹ 戻る</button><span id="recTitle">デッドリフト</span><button aria-label="自己ベスト一覧">🏆</button></div>
+        <div class="prev" id="prev">前回  135kg×5 / 125kg×5</div>
+        <div class="scroll" id="sets"></div>
+        <div class="pad" id="pad">
+          <div class="adj"><button data-d="-2.5">−2.5</button><button data-d="2.5">＋2.5</button><button data-d="-1">−1</button><button data-d="1">＋1</button></div>
+          <div class="keys" id="keys"></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on"><i>🏋️</i>種目</div><div class="tab"><i>📅</i>履歴</div><div class="tab"><i>📈</i>分析</div><div class="tab"><i>⚙️</i>設定</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PART = { back: ['背中', 'var(--back)'], chest: ['胸', 'var(--chest)'], legs: ['脚', 'var(--legs)'], arms: ['腕', 'var(--arms)'] };
+const EX = [
+  { n: 'ラットプルダウン', p: 'back', d: '10/14', days: 3, prev: [[60, 10], [60, 8]] },
+  { n: 'デッドリフト',     p: 'back', d: '10/14', days: 3, prev: [[135, 5], [125, 5]] },
+  { n: 'ベンチプレス',     p: 'chest', d: '10/14', days: 3, prev: [[80, 8], [80, 7]] },
+  { n: 'ルーマニアンデッド', p: 'back', d: '10/10', days: 7, prev: [[100, 8], [100, 8]] },
+  { n: 'レッグプレス',     p: 'legs', d: '10/10', days: 7, prev: [[180, 10], [180, 10]] },
+  { n: 'トライセップス',   p: 'arms', d: '10/10', days: 7, prev: [[30, 12], [30, 10]] },
+  { n: 'ポーズベンチ',     p: 'chest', d: '10/06', days: 11, prev: [[70, 5], [70, 5]] },
+  { n: 'インクラインDB',   p: 'chest', d: '10/06', days: 11, prev: [[28, 10], [28, 9]] },
+  { n: 'アームカール',     p: 'arms', d: '10/01', days: 16, prev: [[14, 12], [14, 10]] },
+];
+let mode = 'day';
+const $ = (s) => document.querySelector(s);
+
+function cardHtml(e, i) {
+  return `<button class="card" style="--pc:${PART[e.p][1]}" data-i="${i}">
+    <div class="name">${e.n}</div><div class="meta"><span class="days">${e.days}</span>日前 ${e.d}</div></button>`;
+}
+function renderGrid() {
+  if (mode === 'day') {
+    const order = EX.map((e, i) => i).sort((a, b) => EX[b].days - EX[a].days);
+    $('#gridWrap').innerHTML = `<div class="grid">${order.map((i) => cardHtml(EX[i], i)).join('')}</div>`;
+  } else {
+    const groups = {};
+    EX.forEach((e, i) => (groups[PART[e.p][0]] = groups[PART[e.p][0]] || []).push(cardHtml(e, i)));
+    $('#gridWrap').innerHTML = Object.entries(groups).map(([k, v]) => `<div class="group">${k}</div><div class="grid">${v.join('')}</div>`).join('');
+  }
+  document.querySelectorAll('.card').forEach((b) => b.onclick = () => openRec(+b.dataset.i));
+}
+$('#segDay').onclick = () => { mode = 'day'; $('#segDay').classList.add('on'); $('#segPart').classList.remove('on'); renderGrid(); };
+$('#segPart').onclick = () => { mode = 'part'; $('#segPart').classList.add('on'); $('#segDay').classList.remove('on'); renderGrid(); };
+
+/* 記録画面 */
+let cur = null, sets = [], focus = null, buf = '';
+function openRec(i) {
+  cur = EX[i];
+  $('#recTitle').textContent = cur.n;
+  $('#prev').textContent = '前回  ' + cur.prev.map(([w, r]) => `${w}kg×${r}`).join(' / ');
+  sets = [];
+  newSet();
+  closePad();
+  renderSets();
+}
+function newSet() {
+  const last = sets[sets.length - 1];
+  const [w, r] = last ? [last.w, last.r] : cur.prev[0];
+  sets.push({ w, r, rpe: '', memo: '', done: false, ghostW: true, ghostR: true });
+}
+const e1rm = (w, r) => (w * 36 / (37 - r)).toFixed(1);
+function renderSets() {
+  $('#sets').innerHTML = sets.map((s, i) => `
+    <div class="set">
+      <div class="row">
+        <span class="no">${i + 1}</span>
+        <button class="copy" data-c="w" data-i="${i}">↪</button>
+        <button class="cell ${s.ghostW ? 'ghost' : ''} ${focus && focus.i === i && focus.f === 'w' ? 'focus' : ''}" data-f="w" data-i="${i}">${Number(s.w).toFixed(1)}</button><span class="unit">kg</span>
+        <button class="copy" data-c="r" data-i="${i}">↪</button>
+        <button class="cell ${s.ghostR ? 'ghost' : ''} ${focus && focus.i === i && focus.f === 'r' ? 'focus' : ''}" data-f="r" data-i="${i}">${s.r}</button><span class="unit">回</span>
+        <button class="done ${s.done ? 'on' : ''}" data-d="${i}">✓</button>
+      </div>
+      <div class="row">
+        <span class="sub">1RM ${e1rm(s.w, s.r)}kg</span>
+        ${s.done && s.w > cur.prev[0][0] ? '<span class="pr">PR</span>' : ''}
+        <span style="flex:1"></span><span class="sub">RPE</span>
+        <input class="memo" style="flex:none;width:56px;text-align:center" data-rpe="${i}" value="${s.rpe}" placeholder="–">
+      </div>
+      <div class="row"><input class="memo" data-memo="${i}" placeholder="メモ" value="${s.memo}"></div>
+    </div>`).join('') + '<button class="addset" id="addSet">＋ セット追加</button>';
+
+  document.querySelectorAll('.cell').forEach((b) => b.onclick = () => openPad(+b.dataset.i, b.dataset.f));
+  document.querySelectorAll('.copy').forEach((b) => b.onclick = () => {
+    const i = +b.dataset.i, f = b.dataset.c, src = i > 0 ? sets[i - 1] : { w: cur.prev[0][0], r: cur.prev[0][1] };
+    sets[i][f] = src[f]; sets[i][f === 'w' ? 'ghostW' : 'ghostR'] = false; renderSets();
+  });
+  document.querySelectorAll('.done').forEach((b) => b.onclick = () => {
+    const s = sets[+b.dataset.d];
+    s.done = !s.done; s.ghostW = s.ghostR = false;
+    if (s.done && +b.dataset.d === sets.length - 1) newSet();
+    renderSets();
+  });
+  document.querySelectorAll('[data-rpe]').forEach((b) => b.oninput = () => sets[+b.dataset.rpe].rpe = b.value);
+  document.querySelectorAll('[data-memo]').forEach((b) => b.oninput = () => sets[+b.dataset.memo].memo = b.value);
+  $('#addSet').onclick = () => { newSet(); renderSets(); $('#sets').scrollTop = 1e5; };
+}
+/* キーパッド */
+function openPad(i, f) { focus = { i, f }; buf = ''; $('#pad').classList.add('open'); renderSets(); }
+function closePad() { focus = null; $('#pad').classList.remove('open'); }
+$('#keys').innerHTML = ['1','2','3','4','5','6','7','8','9','.','0','完了'].map((k) => `<button class="${k === '完了' ? 'ok' : ''}">${k}</button>`).join('');
+document.querySelectorAll('#keys button').forEach((b) => b.onclick = () => {
+  if (!focus) return;
+  if (b.textContent === '完了') { closePad(); renderSets(); return; }
+  buf += b.textContent; setVal(parseFloat(buf) || 0);
+});
+document.querySelectorAll('#pad .adj button').forEach((b) => b.onclick = () => {
+  if (!focus) return;
+  const s = sets[focus.i], d = +b.dataset.d, isW = Math.abs(d) === 2.5;
+  if (isW !== (focus.f === 'w')) return; // ±2.5 は重さ、±1 は回数にだけ効く
+  setVal(Math.max(0, +s[focus.f] + d));
+});
+function setVal(v) {
+  const s = sets[focus.i]; s[focus.f] = v; s[focus.f === 'w' ? 'ghostW' : 'ghostR'] = false; renderSets();
+}
+$('#back').onclick = () => closePad();
+
+renderGrid();
+openRec(1);
+</script>
+</body>
+</html>
