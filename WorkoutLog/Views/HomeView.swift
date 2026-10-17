@@ -10,6 +10,9 @@ struct HomeView: View {
     @Environment(\.appDatabase) private var database
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("home.mode") private var mode = Mode.all
+    /// 並べ方は見方ごとに覚えておく
+    @AppStorage("home.sort.all") private var sortAll = SortRule.elapsedDesc
+    @AppStorage("home.sort.part") private var sortPart = SortRule.elapsedDesc
     /// 経過日数の基準。日をまたいでアプリに戻ったときに数え直すため、状態で持つ
     @State private var today = LocalDay.today()
     @State private var cards: [ExerciseCard] = []
@@ -27,7 +30,7 @@ struct HomeView: View {
                 case .all:
                     grid(visible)
                 case .part:
-                    ForEach(Part.allCases, id: \.self) { part in
+                    ForEach(partOrder(visible), id: \.self) { part in
                         let group = visible.filter { $0.exercise.part == part }
                         if !group.isEmpty {
                             Text(part.label)
@@ -64,7 +67,20 @@ struct HomeView: View {
                     .pickerStyle(.segmented)
                     .fixedSize()
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Picker("並べ替え [\(mode == .all ? "すべて" : "部位")]", selection: mode == .all ? $sortAll : $sortPart) {
+                            ForEach(SortRule.allCases, id: \.self) { Text($0.label).tag($0) }
+                        }
+                        .pickerStyle(.inline)
+                    } label: {
+                        Label("並べ替え", systemImage: "arrow.up.arrow.down")
+                    }
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    NavigationLink(value: Route.settings) {
+                        Label("設定", systemImage: "gearshape")
+                    }
                     Button("種目を追加", systemImage: "plus") { isAdding = true }
                 }
             }
@@ -77,6 +93,10 @@ struct HomeView: View {
                     RecordView(target: .existing(recordId: recordId))
                 case .newRecord(let exerciseId, _):
                     RecordView(target: .new(exerciseId: exerciseId))
+                case .analysis(let exerciseId):
+                    AnalysisView(exerciseId: exerciseId)
+                case .settings:
+                    SettingsView()
                 }
             }
             .sheet(isPresented: $isAdding) {
@@ -95,8 +115,9 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
             today = .today()
         }
-        .task {
-            let observation = ValueObservation.tracking(ExerciseCard.fetchAll)
+        .task(id: today) {
+            let today = today
+            let observation = ValueObservation.tracking { db in try ExerciseCard.fetchAll(db, today: today) }
             do {
                 for try await value in observation.values(in: database.reader) {
                     cards = value
@@ -141,12 +162,35 @@ struct HomeView: View {
         }
     }
 
-    /// 経過日数の降順。未実施の種目は経過日数がいちばん大きいとして先頭に置く。同じなら名前の順
+    private var rule: SortRule { mode == .all ? sortAll : sortPart }
+
+    /// 今の見方の並べ方で並べる。未実施の種目は、経過日数がいちばん大きく、頻度が 0 として扱う。
+    /// 値が同じなら経過日数の大きい順、それも同じなら名前の順
     private func sorted(_ cards: [ExerciseCard]) -> [ExerciseCard] {
-        cards.sorted { a, b in
-            let da = a.elapsedDays(today: today) ?? .max, db = b.elapsedDays(today: today) ?? .max
-            return da != db ? da > db : a.exercise.name < b.exercise.name
+        let rule = rule
+        return cards.sorted { a, b in
+            let ea = a.elapsedDays(today: today) ?? .max, eb = b.elapsedDays(today: today) ?? .max
+            if !rule.isElapsed, a.frequency(rule) != b.frequency(rule) {
+                return rule.isDescending ? a.frequency(rule) > b.frequency(rule) : a.frequency(rule) < b.frequency(rule)
+            }
+            if rule.isElapsed, !rule.isDescending, ea != eb {
+                return ea < eb
+            }
+            return ea != eb ? ea > eb : a.exercise.name < b.exercise.name
         }
+    }
+
+    /// 部位の見方の区切りの順。経過日数なら胸、肩、…、その他の順。
+    /// 頻度なら、その部位の表示中の種目の頻度の合計で、選んだ向きに並べる。合計が同じなら胸、肩、…の順
+    private func partOrder(_ visible: [ExerciseCard]) -> [Part] {
+        let rule = rule
+        guard !rule.isElapsed else { return Part.allCases }
+        let total = Dictionary(grouping: visible, by: \.exercise.part).mapValues { $0.reduce(0) { $0 + $1.frequency(rule) } }
+        return Part.allCases.enumerated().sorted { a, b in
+            let ta = total[a.element] ?? 0, tb = total[b.element] ?? 0
+            if ta != tb { return rule.isDescending ? ta > tb : ta < tb }
+            return a.offset < b.offset
+        }.map(\.element)
     }
 }
 

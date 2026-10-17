@@ -10,8 +10,14 @@ struct HistoryView: View {
     @State private var exercise: Exercise?
     @State private var summaries: [RecordSummary] = []
     @State private var isEditingExercise = false
+    @AppStorage(SettingsKey.historyColumns) private var columnsRaw = HistoryColumn.initialRaw
     /// 削除の確認を出している 1 回の記録
     @State private var deleting: RecordSummary?
+
+    private var columns: [HistoryColumn] {
+        let selected = HistoryColumn.decode(columnsRaw)
+        return HistoryColumn.allCases.filter(selected.contains)
+    }
 
     private var isConfirmingDelete: Binding<Bool> {
         Binding { deleting != nil } set: { if !$0 { deleting = nil } }
@@ -35,7 +41,7 @@ struct HistoryView: View {
             Section {
                 ForEach(summaries) { summary in
                     NavigationLink(value: Route.record(recordId: summary.record.id!)) {
-                        HistoryRow(summary: summary, showsTime: summary.record.sharesDay(with: summaries.map(\.record)))
+                        HistoryRow(summary: summary, columns: columns, showsTime: summary.record.sharesDay(with: summaries.map(\.record)))
                     }
                     .swipeActions {
                         // destructive にすると、確認の前に行を消すアニメーションが走る
@@ -49,7 +55,7 @@ struct HistoryView: View {
                     }
                 }
             } header: {
-                Text("ボリューム / 推定 1RM / 最大重量(kg)")
+                Text(columns.map(\.label).joined(separator: " / ") + (columns.contains { $0 != .setCount } ? "(kg)" : ""))
             }
         }
         .listStyle(.plain)
@@ -62,6 +68,9 @@ struct HistoryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
+                NavigationLink(value: Route.analysis(exerciseId: exerciseId)) {
+                    Label("この種目の分析", systemImage: "chart.xyaxis.line")
+                }
                 Button("新しい記録", systemImage: "plus") {
                     path.append(.newRecord(exerciseId: exerciseId, token: UUID()))
                 }
@@ -97,11 +106,12 @@ struct HistoryView: View {
 
 private struct HistoryRow: View {
     let summary: RecordSummary
+    let columns: [HistoryColumn]
     let showsTime: Bool
 
     var body: some View {
         HStack {
-            Text("\(Format.decimal(summary.volume)) / \(Format.decimal(summary.estimated1RM)) / \(Format.decimal(summary.maxWeight))")
+            Text(columns.map { $0.value(summary) }.joined(separator: " / "))
                 .monospacedDigit()
             Spacer()
             if !summary.record.memo.isEmpty {

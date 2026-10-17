@@ -24,6 +24,24 @@ struct LocalDay: Hashable, Comparable, Sendable {
         LocalDay(Date(), timeZone: .current)
     }
 
+    /// SQL の date() と同じ形("YYYY-MM-DD")
+    var sqlString: String {
+        String(format: "%04d-%02d-%02d", year, month, day)
+    }
+
+    func adding(days: Int = 0, months: Int = 0) -> LocalDay {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        let date = calendar.date(from: DateComponents(year: year, month: month, day: day))!
+        let shifted = calendar.date(byAdding: DateComponents(month: months, day: days), to: date)!
+        return LocalDay(shifted, timeZone: .gmt)
+    }
+
+    /// 直近 n か月の始まりの日。n か月前の翌日(今日が 10/17 なら、3 か月は 7/18 から)
+    func start(ofLastMonths n: Int) -> LocalDay {
+        adding(months: -n).adding(days: 1)
+    }
+
     /// self から other までの日数
     func days(to other: LocalDay) -> Int {
         var calendar = Calendar(identifier: .gregorian)

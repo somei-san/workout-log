@@ -37,7 +37,7 @@ struct RecordView: View {
 
     @Environment(\.appDatabase) private var database
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("intensity") private var intensity = IntensityKind.rpe
+    @AppStorage(SettingsKey.intensity) private var intensity = IntensityKind.initial
     @State private var exercise: Exercise?
     /// 保存した 1 回の記録。新しい記録では、最初のセットができるまで nil
     @State private var record: WorkoutRecord?

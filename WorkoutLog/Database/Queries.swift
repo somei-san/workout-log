@@ -1,11 +1,15 @@
 import Foundation
 import GRDB
 
-/// ホームのカード。種目と、最後の 1 回の記録の日時
+/// ホームのカード。種目と、最後の 1 回の記録の日時と、頻度
 struct ExerciseCard: Identifiable, Sendable, FetchableRecord {
     var exercise: Exercise
     var lastAt: Date?
     var lastUtcOffset: Int?
+    /// 直近 4 週間の 1 回の記録の数
+    var frequency4w: Int
+    /// 直近 3 か月の 1 回の記録の数
+    var frequency3m: Int
 
     var id: Int64? { exercise.id }
 
@@ -13,6 +17,15 @@ struct ExerciseCard: Identifiable, Sendable, FetchableRecord {
         exercise = try Exercise(row: row)
         lastAt = row["lastAt"]
         lastUtcOffset = row["lastUtcOffset"]
+        frequency4w = row["frequency4w"]
+        frequency3m = row["frequency3m"]
+    }
+
+    func frequency(_ rule: SortRule) -> Int {
+        switch rule {
+        case .frequency3mDesc, .frequency3mAsc: frequency3m
+        default: frequency4w
+        }
     }
 
     /// 最後に実施した日(記録した場所の時刻で数える)
@@ -27,14 +40,21 @@ struct ExerciseCard: Identifiable, Sendable, FetchableRecord {
         lastDay.map { max(0, $0.days(to: today)) }
     }
 
-    static func fetchAll(_ db: Database) throws -> [ExerciseCard] {
-        try ExerciseCard.fetchAll(db, sql: """
-            SELECT exercise.*, r.performedAt AS lastAt, r.utcOffset AS lastUtcOffset
+    /// 頻度は、記録した場所の日付で数える。4 週間は今日を含む 28 日、3 か月は 3 か月前の翌日から今日まで
+    static func fetchAll(_ db: Database, today: LocalDay) throws -> [ExerciseCard] {
+        let since4w = today.adding(days: -27).sqlString
+        let since3m = today.start(ofLastMonths: 3).sqlString
+        // performedAt は UTC なので、utcOffset を足してから日付を切り出す
+        let localDay = "date(performedAt, utcOffset || ' minutes')"
+        return try ExerciseCard.fetchAll(db, sql: """
+            SELECT exercise.*, r.performedAt AS lastAt, r.utcOffset AS lastUtcOffset,
+                (SELECT COUNT(*) FROM record WHERE exerciseId = exercise.id AND \(localDay) >= ?) AS frequency4w,
+                (SELECT COUNT(*) FROM record WHERE exerciseId = exercise.id AND \(localDay) >= ?) AS frequency3m
             FROM exercise
             LEFT JOIN record r ON r.id = (
                 SELECT id FROM record WHERE exerciseId = exercise.id
                 ORDER BY performedAt DESC, id DESC LIMIT 1)
-            """)
+            """, arguments: [since4w, since3m])
     }
 }
 

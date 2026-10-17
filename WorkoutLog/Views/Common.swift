@@ -36,4 +36,6 @@ enum Route: Hashable {
     case record(recordId: Int64)
     /// 新しい 1 回の記録。「＋」を押すたびに別の画面にするため token を持つ
     case newRecord(exerciseId: Int64, token: UUID)
+    case analysis(exerciseId: Int64)
+    case settings
 }
