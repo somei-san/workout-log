@@ -1,0 +1,29 @@
+# Xcode のプロジェクトは、このファイルから `xcodegen generate` で生成する。
+# 設定は Xcode の画面ではなくここで変える(生成し直すと、画面で変えた設定は消える)。
+name: WorkoutLog
+options:
+  bundleIdPrefix: io.github.somei-san
+  deploymentTarget:
+    iOS: "18.0"
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift
+    from: "7.0.0"
+targets:
+  WorkoutLog:
+    type: application
+    platform: iOS
+    sources:
+      - WorkoutLog
+    dependencies:
+      - package: GRDB
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_CFBundleDisplayName: 筋トレ記録
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"

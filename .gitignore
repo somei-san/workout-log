@@ -1,0 +1,8 @@
+# project.yml から生成する
+*.xcodeproj/
+
+# Xcode
+xcuserdata/
+DerivedData/
+.build/
+.swiftpm/
