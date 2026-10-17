@@ -6,56 +6,81 @@
 <title>ワイヤーフレーム</title>
 <style>
   :root {
-    --back: #b87333; --chest: #d9b13b; --legs: #6ab0e0; --arms: #c8445a;
+    --chest: #d9b13b; --shoulder: #9b6dd6; --back: #b87333; --arms: #c8445a; --abs: #4caf7a; --legs: #6ab0e0; --other: #8e8e96;
     --accent: #3b82f6; --red: #e63b2e; --line: #d8d8dc; --muted: #9a9aa2;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { margin: 0; padding: 24px; background: #e9e9ee; font-family: -apple-system, "Hiragino Sans", sans-serif; color: #111; }
   h1 { font-size: 16px; margin: 0 0 4px; }
   p.note { font-size: 12px; color: #555; margin: 0 0 20px; }
-  .stage { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
   .label { font-size: 12px; color: #555; margin-bottom: 8px; }
   .phone { width: 390px; height: 780px; background: #fff; border-radius: 40px; border: 10px solid #1c1c1e; overflow: hidden; position: relative; display: flex; flex-direction: column; }
   .status { height: 44px; flex: none; }
   .screen { flex: 1; display: none; flex-direction: column; min-height: 0; }
   .screen.active { display: flex; }
   .scroll { flex: 1; overflow-y: auto; }
-  .tabbar { flex: none; height: 64px; border-top: 1px solid var(--line); display: flex; background: #f8f8fa; }
-  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: var(--muted); gap: 2px; }
-  .tab.on { color: var(--accent); font-weight: 600; }
-  .tab i { font-style: normal; font-size: 20px; }
 
   /* ホーム */
   .topbar { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 14px 10px; }
   .seg { display: flex; background: #eee; border-radius: 10px; padding: 3px; }
   .seg button { border: 0; background: transparent; padding: 8px 16px; border-radius: 8px; font-size: 14px; min-height: 36px; }
   .seg button.on { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.15); font-weight: 600; }
-  .plus { width: 44px; height: 44px; border-radius: 22px; border: 0; background: #eee; font-size: 24px; }
+  .icons { display: flex; gap: 8px; }
+  .plus { width: 44px; height: 44px; border-radius: 22px; border: 0; background: #eee; font-size: 22px; }
   .group { padding: 10px 12px 2px; font-size: 12px; color: var(--muted); font-weight: 600; }
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 6px 10px 10px; }
-  .card { border: 0; border-left: 5px solid var(--pc); background: #f4f4f7; border-radius: 6px; padding: 5px 6px; text-align: left; min-width: 0; min-height: 48px; }
+  .card { border: 0; background: #f4f4f7; border-radius: 6px; padding: 5px 6px; text-align: left; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 6px; }
+  .card .ico { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--pc); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .card .txt { min-width: 0; flex: 1; }
   .card .name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card .meta { font-size: 11px; color: #555; margin-top: 2px; }
   .card .days { font-size: 14px; font-weight: 700; color: var(--red); }
+  .card.off { opacity: .55; }
+  .hidden-head { display: block; width: 100%; border: 0; background: none; text-align: left; padding: 14px 12px 6px; min-height: 44px; font-size: 13px; color: var(--muted); font-weight: 600; }
 
-  /* 記録 */
+  /* 画面上部のナビゲーション */
   .nav { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 14px 10px; background: var(--red); color: #fff; font-weight: 600; }
   .nav button { background: none; border: 0; color: #fff; font-size: 15px; min-height: 40px; padding: 0 4px; }
+  .nav > span:last-child { min-width: 56px; text-align: right; }
+  .nav .back { min-width: 56px; min-height: 44px; font-size: 30px; font-weight: 400; line-height: 1; text-align: left; }
+  /* 記録 */
   .prev { padding: 8px 18px; font-size: 13px; color: #555; }
-  .set { border-bottom: 1px solid var(--line); padding: 8px 14px; min-height: 112px; }
+  .nav .ttl { display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
+  .nav .ttl button { min-height: 44px; padding: 2px 0 0; font-size: 12px; font-weight: 400; }
+  /* 日付は押せると分かるよう、半透明の角丸と ▾ で囲む */
+  .nav .ttl button span { display: inline-block; background: rgba(255,255,255,.25); border-radius: 12px; padding: 3px 10px; }
+  .cal { padding: 4px 4px 0; }
+  .cal-head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; padding: 0 4px 8px; }
+  .cal-head span { color: var(--muted); font-size: 20px; padding: 0 10px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+  .cal-grid .wd { font-size: 11px; color: var(--muted); padding-bottom: 4px; }
+  .nav .ttl button.plain span { background: none; }
+  .nav .ttl button.plain:disabled { opacity: 1; }
+  .set.view .row { min-height: 40px; }
+  .vval { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .memo-view { padding: 14px 18px; font-size: 15px; color: #333; line-height: 1.6; }
+  .memo-view .sub { margin-bottom: 4px; }
+  .cal-time { display: flex; justify-content: space-between; align-items: center; padding: 8px 6px; border-top: 1px solid var(--line); font-size: 15px; }
+  .cal-time input { font-size: 17px; border: 0; background: #f2f2f6; border-radius: 8px; padding: 6px 10px; min-height: 40px; }
+  .cal-btns { display: flex; gap: 8px; }
+  .cal-btns button { flex: 1; }
+  .sheet .cal-btns .ok { background: var(--red); color: #fff; font-weight: 600; }
+  .sheet .cal-grid button { min-height: 40px; border: 0; background: none; border-radius: 20px; font-size: 15px; }
+  .cal-grid button.on { background: var(--red); color: #fff; font-weight: 700; }
+  .cal-grid button.rec::after { content: '•'; display: block; line-height: 0; color: var(--red); }
+  .cal-grid button.on.rec::after { color: #fff; }
+  .cal-grid button:disabled { color: #ccc; }
+  .set { border-bottom: 1px solid var(--line); padding: 8px 14px; }
+  .daymemo { display: flex; padding: 0 18px 16px; }
   .row { display: flex; align-items: center; gap: 8px; min-height: 56px; }
   .no { width: 18px; font-size: 18px; }
-  .copy { width: 32px; height: 32px; border-radius: 16px; border: 0; background: #f2b6b0; color: #fff; font-size: 16px; flex: none; }
   .cell { flex: 1; min-height: 44px; border: 0; border-bottom: 2px solid var(--line); background: none; font-size: 22px; font-weight: 700; text-align: right; padding: 0 4px; }
-  .cell.ghost { color: #c4c4c8; }
   .cell.focus { border-bottom-color: var(--red); }
   .unit { font-size: 13px; color: #555; }
-  .done { width: 44px; height: 44px; border-radius: 22px; border: 2px solid var(--line); background: #fff; color: var(--line); font-size: 22px; flex: none; }
-  .done.on { background: #34c759; border-color: #34c759; color: #fff; }
   .sub { font-size: 12px; color: var(--muted); }
   .pr { background: #f5c518; color: #5a4300; font-size: 11px; font-weight: 700; border-radius: 8px; padding: 2px 6px; }
   .memo { flex: 1; min-height: 40px; border: 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-  .addset { margin: 14px auto; display: block; background: #34c759; color: #fff; border: 0; border-radius: 24px; padding: 14px 24px; font-size: 15px; font-weight: 600; min-height: 48px; }
+  .addset { margin: 14px auto; display: block; background: #34c759; color: #fff; border: 0; border-radius: 28px; width: 56px; height: 56px; font-size: 28px; font-weight: 600; }
   /* キーパッド */
   .pad { flex: none; background: #f2f2f6; border-top: 1px solid var(--line); padding: 8px; display: none; }
   .pad.open { display: block; }
@@ -64,134 +89,679 @@
   .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .keys button { min-height: 48px; border: 0; border-radius: 8px; background: #fff; font-size: 20px; }
   .keys .ok { background: var(--accent); color: #fff; }
+  /* 種目の履歴 */
+  .colhead { flex: none; padding: 8px 14px; font-size: 12px; color: var(--muted); background: #f8f8fa; border-bottom: 1px solid var(--line); }
+  .hrow { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 52px; border: 0; border-bottom: 1px solid var(--line); background: none; padding: 0 14px; font-size: 16px; text-align: left; }
+  .hrow .v { flex: 1; font-variant-numeric: tabular-nums; }
+  .hrow .dt { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .hrow .chev { color: var(--muted); }
+  /* 分析 */
+  .an-top { flex: none; padding: 10px 12px 0; display: flex; flex-direction: column; gap: 8px; }
+  .seg.full { width: 100%; } .seg.full button { flex: 1; padding: 8px 4px; font-size: 13px; }
+  .chart { padding: 8px 12px; }
+  .chart svg { width: 100%; height: 190px; background: #fafafc; border-radius: 10px; }
+  .row-sub { display: flex; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 13px; }
+  .legend { display: flex; gap: 10px; font-size: 11px; padding: 0 16px 8px; color: #555; }
+  /* 長押しメニュー */
+  .menu { display: none; position: absolute; inset: 0; background: rgba(0,0,0,.35); align-items: flex-end; z-index: 5; }
+  .menu.open { display: flex; }
+  .sheet { width: 100%; background: #fff; border-radius: 16px 16px 0 0; padding: 14px 14px 24px; display: flex; flex-direction: column; gap: 8px; }
+  .sheet b { text-align: center; padding-bottom: 4px; }
+  .sheet button { min-height: 52px; border: 0; border-radius: 12px; background: #f2f2f6; font-size: 17px; }
+  .sheet .danger { color: var(--red); }
+  .sheet-note { margin: 0 4px 4px; font-size: 13px; color: #555; text-align: center; line-height: 1.5; }
+  /* 行を左にスワイプした状態。右から赤い「削除」が出る */
+  .swipe { position: relative; overflow: hidden; }
+  .swipe .hrow { transform: translateX(-88px); background: #fff; }
+  .swipe .swipe-del { position: absolute; top: 0; right: 0; bottom: 0; width: 88px; border: 0; background: var(--red); color: #fff; font-size: 15px; font-weight: 600; }
+  /* 並べ替えは画面の中央に出すダイアログ。選んでいるものに ✓ */
+  .menu.center { align-items: center; justify-content: center; }
+  .sheet.dialog { width: 84%; border-radius: 22px; padding: 18px 14px 14px; }
+  .sheet.dialog b { text-align: left; font-size: 18px; padding: 0 6px 6px; }
+  .sheet.dialog b small { display: block; font-size: 14px; font-weight: 400; color: #555; margin-top: 4px; }
+  .sheet .opt { position: relative; min-height: 48px; border-radius: 24px; }
+  .sheet .opt span { position: absolute; right: 18px; font-weight: 700; }
+  /* 設定 */
+  .list-row { display: flex; justify-content: space-between; align-items: center; min-height: 56px; padding: 0 16px; border-bottom: 1px solid var(--line); font-size: 16px; }
+  .list-row small { color: var(--muted); font-size: 13px; }
+  .list-title { padding: 16px 16px 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
+  /* 種目の追加 */
+  .nav button:disabled { opacity: .45; }
+  .addname { display: flex; padding: 0 16px; }
+  .addname .memo { font-size: 17px; min-height: 48px; }
+  .parts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 4px 16px; }
+  .parts button { display: flex; align-items: center; gap: 8px; min-height: 52px; border: 2px solid transparent; border-radius: 10px; background: #f4f4f7; padding: 0 12px; font-size: 16px; }
+  .parts button.on { border-color: var(--accent); background: #fff; font-weight: 600; }
+  .parts .ico { width: 22px; height: 22px; border-radius: 50%; background: var(--pc); flex: none; }
+  .stepper { display: flex; align-items: center; gap: 4px; }
+  .stepper button { width: 44px; height: 36px; border: 0; border-radius: 8px; background: #eee; font-size: 20px; }
+  .stepper b { min-width: 32px; text-align: center; font-size: 18px; }
+  /* 値の入っていないセルは「–」を薄く出す */
+  .cell.empty::after { content: '–'; color: #ccc; font-weight: 400; }
+  /* 種目の削除 */
+  .del { padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+  .del h2 { font-size: 20px; margin: 0; }
+  .del .warn { background: #fdecea; border: 1px solid #f5b5ae; color: #8a1c12; border-radius: 10px; padding: 12px; font-size: 14px; line-height: 1.6; }
+  .del p { margin: 0; font-size: 13px; color: #555; line-height: 1.6; }
+  .del input { min-height: 48px; border: 1px solid var(--line); border-radius: 8px; padding: 0 12px; font-size: 17px; }
+  .del .go { min-height: 52px; border: 0; border-radius: 12px; background: var(--red); color: #fff; font-size: 17px; font-weight: 600; }
+  .del .go:disabled { opacity: .35; }
+  /* キャンバスと画面間の矢印 */
+  .canvas-wrap { overflow: auto; }
+  .canvas { position: relative; width: 1600px; height: 5300px; }
+  .frame { position: absolute; width: 390px; }
+  .ph { width: 390px; height: 170px; border: 2px dashed #999; border-radius: 16px; background: #fff; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; font-size: 14px; color: #555; }
+  .links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+  .links path { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .links circle { fill: var(--accent); }
+  .links text { font-size: 12px; font-weight: 600; fill: var(--accent); stroke: #e9e9ee; stroke-width: 4px; paint-order: stroke; }
 </style>
 </head>
 <body>
 <h1>筋トレ記録アプリ ワイヤーフレーム</h1>
-<p class="note">タップで動きます。カードで記録画面へ移動、✓ でセット完了、↪ で前の値を引き継ぎ、値をタップするとキーパッド。仕様は ux-design.md を参照。</p>
+<p class="note">タップで動きます。カードで種目の履歴、その「＋」か行で記録画面へ移動、セットの下の「＋」で直前の値の行を追加、値をタップするとキーパッド。種目カードの長押しで非表示・削除のメニュー、分析は指標・期間・表示を切り替えられます。仕様は ux-design.md を参照。</p>
 
-<div class="stage">
-  <div>
-    <div class="label">1. 種目グリッド(ホーム)</div>
-    <div class="phone" id="phoneHome">
+<div class="canvas-wrap">
+<div class="canvas" id="canvas">
+  <div class="frame" style="left:1200px;top:1760px">
+    <div class="label">3b. 種目の記録(閲覧モード)。前日以前の記録はこのモードで開く。右上の「編集」で 3 の編集モードに切り替わる</div>
+    <div class="phone" id="phoneRecView">
       <div class="status"></div>
-      <div class="screen active" id="home">
-        <div class="topbar">
-          <div class="seg"><button id="segDay" class="on">経過日数</button><button id="segPart">部位</button></div>
-          <button class="plus" aria-label="種目を追加">＋</button>
-        </div>
-        <div class="scroll" id="gridWrap"></div>
-        <div class="tabbar">
-          <div class="tab on"><i>🏋️</i>種目</div><div class="tab"><i>📅</i>履歴</div><div class="tab"><i>📈</i>分析</div><div class="tab"><i>⚙️</i>設定</div>
+      <div class="screen active">
+        <div class="nav"><button class="back">‹</button><span class="ttl"><span>デッドリフト</span><button class="plain" disabled><span>2026/10/10(土)</span></button></span><span><button>編集</button></span></div>
+        <div class="prev" id="viewPrev"></div>
+        <div class="scroll" id="viewSets"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:80px;top:3520px">
+    <div class="label">2c. 1 回の記録の削除(左スワイプ)。2 の行を左にスワイプすると「削除」が出る。押すと 2e の確認を出す</div>
+    <div class="phone">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button class="back">‹</button><span>デッドリフト</span><span><button>📈</button><button>＋</button><button>⚙︎</button></span></div>
+        <div class="colhead">ボリューム / 推定 1RM / 最大重量(kg)</div>
+        <div class="scroll" id="swipeDemo"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:640px;top:3520px">
+    <div class="label">2d. 1 回の記録の削除(長押し)。2 の行を長押しするとメニューが出る。種目のカードの長押しと同じ形</div>
+    <div class="phone" id="phoneHold">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button class="back">‹</button><span>デッドリフト</span><span><button>📈</button><button>＋</button><button>⚙︎</button></span></div>
+        <div class="colhead">ボリューム / 推定 1RM / 最大重量(kg)</div>
+        <div class="scroll" id="holdDemo"></div>
+        <div class="menu open" id="holdMenuDemo"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:1200px;top:3520px">
+    <div class="label">2e. 1 回の記録の削除の確認。消える中身を書き、赤字の「記録を削除」で消す</div>
+    <div class="phone" id="phoneConfirm">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button class="back">‹</button><span>デッドリフト</span><span><button>📈</button><button>＋</button><button>⚙︎</button></span></div>
+        <div class="colhead">ボリューム / 推定 1RM / 最大重量(kg)</div>
+        <div class="scroll" id="confirmDemo"></div>
+        <div class="menu open" id="confirmMenuDemo"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:640px;top:4400px">
+    <div class="label">1e. 種目の設定。長押しメニューの「種目の設定」か、2 の右上の ⚙︎ から開く。種目の追加と同じ画面</div>
+    <div class="phone" id="phoneExCfg">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button>キャンセル</button><span>種目の設定</span><span><button>保存</button></span></div>
+        <div class="scroll">
+          <div class="list-title">名前</div>
+          <div class="addname"><input class="memo" value="デッドリフト"></div>
+          <div class="list-title">部位</div>
+          <div class="parts" id="cfgPartsDemo"></div>
+          <div class="list-title">最初に並べるセット数</div>
+          <div class="list-row">空の行の数<span class="stepper"><button>−</button><b>3</b><button>＋</button></span></div>
         </div>
       </div>
     </div>
   </div>
 
-  <div>
-    <div class="label">2. 種目の記録</div>
+  <div class="frame" style="left:1200px;top:4400px">
+    <div class="label">3c. 新しい 1 回の記録(最初に並べるセット数が 3)。空の行は、重さと回数を入れるとセットになる</div>
+    <div class="phone" id="phoneNewRec">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button class="back">‹</button><span class="ttl"><span>デッドリフト</span><button><span>2026/10/17(土) ▾</span></button></span><span></span></div>
+        <div class="prev">前回  135kg×5 / 125kg×5</div>
+        <div class="scroll" id="newRecDemo"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:80px;top:4428px">
+    <div class="ph">左上の「‹」は 1 つ前の画面に、「キャンセル」はホームに戻る(矢印は省略)</div>
+  </div>
+
+  <div class="frame" style="left:1200px;top:0">
+    <div class="label">1c. 種目の削除(ホームの上にシートで開く)</div>
+    <div class="phone" id="phoneDel">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button id="delCancel">キャンセル</button><span>種目を削除</span><span></span></div>
+        <div class="scroll del">
+          <h2 id="delName">デッドリフト</h2>
+          <div class="warn" id="delWarn"></div>
+          <p>記録を残したまま一覧から外すときは、削除ではなく「非表示」を使う。</p>
+          <label class="sub" for="delInput">確認のため「削除」と入力してください</label>
+          <input id="delInput" autocomplete="off">
+          <button class="go" id="delOk" disabled>この種目を削除する</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:640px;top:0">
+    <div class="label">1a. 長押しメニュー(ホームの上に出る)。非表示の種目では「非表示」が「再表示」になる</div>
+    <div class="phone" id="phoneMenu">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="topbar">
+          <div class="icons"><div class="seg"><button class="on">すべて</button><button>部位</button></div><button class="plus">↕</button></div>
+          <div class="icons"><button class="plus">⚙️</button><button class="plus">＋</button></div>
+        </div>
+        <div class="scroll" id="menuDemoGrid"></div>
+        <div class="menu open"><div class="sheet"><b>デッドリフト</b><button>種目の設定</button><button>非表示</button><button class="danger">削除</button><button>キャンセル</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:80px;top:0">
+    <div class="label">1b. 種目の追加(ホームの上にシートで開く)</div>
+    <div class="phone" id="phoneAdd">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button id="addCancel">キャンセル</button><span id="addTitle">種目を追加</span><span><button id="addOk" disabled>追加</button></span></div>
+        <div class="scroll">
+          <div class="list-title">名前</div>
+          <div class="addname"><input class="memo" id="addName" placeholder="例: ベンチプレス"></div>
+          <div class="list-title">部位</div>
+          <div class="parts" id="addParts"></div>
+          <div class="list-title">最初に並べるセット数</div>
+          <div class="list-row">空の行の数<span class="stepper"><button id="addMinus" aria-label="減らす">−</button><b id="addSets">0</b><button id="addPlus" aria-label="増やす">＋</button></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:80px;top:880px">
+    <div class="label">1. 種目グリッド(ホーム)。一番下の「非表示の種目」はタップで開く</div>
+    <div class="phone" id="phoneHome">
+      <div class="status"></div>
+      <div class="screen active" id="home">
+        <div class="topbar">
+          <div class="icons"><div class="seg"><button id="segDay" class="on">すべて</button><button id="segPart">部位</button></div><button class="plus" id="toSort" aria-label="並び">↕</button></div>
+          <div class="icons"><button class="plus" id="toCfg" aria-label="設定">⚙️</button><button class="plus" id="toAdd" aria-label="種目を追加">＋</button></div>
+        </div>
+        <div class="scroll" id="gridWrap"></div>
+        <div class="menu" id="menu"></div>
+        <div class="menu center" id="sortMenu"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:640px;top:880px">
+    <div class="label">2. 種目の履歴</div>
+    <div class="phone" id="phoneExHist">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button class="back" aria-label="戻る" id="exBack">‹</button><span id="exHistTitle"></span><span><button aria-label="この種目の分析" id="toAn">📈</button><button aria-label="今日の記録" id="toToday">＋</button><button aria-label="種目の設定" id="toExCfg">⚙︎</button></span></div>
+        <div class="colhead" id="colhead"></div>
+        <div class="scroll" id="exHist"></div>
+        <div class="menu" id="histMenu"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:640px;top:1760px">
+    <div class="label">3. 種目の記録(編集モード)。今日の記録と、＋ で作る新しい記録はこのモードで開く</div>
     <div class="phone" id="phoneRec">
       <div class="status"></div>
       <div class="screen active" id="rec">
-        <div class="nav"><button id="back">‹ 戻る</button><span id="recTitle">デッドリフト</span><button aria-label="自己ベスト一覧">🏆</button></div>
+        <div class="nav"><button class="back" aria-label="戻る" id="back">‹</button><span class="ttl"><span id="recTitle">デッドリフト</span><button id="recDate" aria-label="日付と時刻を変える"><span></span></button></span><span><button id="recEdit"></button></span></div>
         <div class="prev" id="prev">前回  135kg×5 / 125kg×5</div>
         <div class="scroll" id="sets"></div>
         <div class="pad" id="pad">
           <div class="adj"><button data-d="-2.5">−2.5</button><button data-d="2.5">＋2.5</button><button data-d="-1">−1</button><button data-d="1">＋1</button></div>
           <div class="keys" id="keys"></div>
         </div>
-        <div class="tabbar">
-          <div class="tab on"><i>🏋️</i>種目</div><div class="tab"><i>📅</i>履歴</div><div class="tab"><i>📈</i>分析</div><div class="tab"><i>⚙️</i>設定</div>
+        <div class="menu" id="recCal"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:640px;top:2640px">
+    <div class="label">3a. 日付と時刻の変更(記録の上に出る)。• は記録のある日</div>
+    <div class="phone" id="phoneDate">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button class="back">‹</button><span class="ttl"><span>デッドリフト</span><button><span>2026/10/17(土) ▾</span></button></span><span></span></div>
+        <div class="prev">前回  135kg×5 / 125kg×5</div>
+        <div class="scroll"></div>
+        <div class="menu open" id="dateDemo"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:80px;top:2640px">
+    <div class="label">1d. 並べ替え(ホームの中央に出る)。図は「部位」の見方で「頻度(4 週間)：降順」を選んだ状態</div>
+    <div class="phone" id="phoneSort">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="topbar">
+          <div class="icons"><div class="seg"><button>すべて</button><button class="on">部位</button></div><button class="plus">↕</button></div>
+          <div class="icons"><button class="plus">⚙️</button><button class="plus">＋</button></div>
+        </div>
+        <div class="scroll" id="partOrderDemo"></div>
+        <div class="menu center open" id="sortDemo"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame" style="left:1200px;top:2640px">
+    <div class="label">2b. 同じ日に記録が 2 つある場合の種目の履歴。その日の行だけ時刻を出す</div>
+    <div class="phone" id="phoneSameDay">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button class="back">‹</button><span>デッドリフト</span><span><button>📈</button><button>＋</button><button>⚙︎</button></span></div>
+        <div class="colhead">ボリューム / 推定 1RM / 最大重量(kg)</div>
+        <div class="scroll">
+          <button class="hrow"><span class="v">675.0 / 151.9 / 135.0</span><span class="dt">2026/10/14 18:30</span><span class="chev">›</span></button>
+          <button class="hrow"><span class="v">625.0 / 140.6 / 125.0</span><span class="dt">2026/10/14 09:12</span><span class="chev">›</span></button>
+          <button class="hrow"><span class="v">1192.5 / 149.1 / 132.5</span><span aria-label="メモあり">📝</span><span class="dt">2026/10/10</span><span class="chev">›</span></button>
+          <button class="hrow"><span class="v">1170.0 / 146.3 / 130.0</span><span class="dt">2026/10/06</span><span class="chev">›</span></button>
         </div>
       </div>
     </div>
   </div>
+
+  <div class="frame" style="left:1200px;top:880px">
+    <div class="label">4. 分析</div>
+    <div class="phone" id="phoneAn">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button class="back" aria-label="戻る" id="anBack">‹</button><span id="anTitle"></span><span></span></div>
+        <div class="an-top">
+          <div class="seg full" id="anMetric"><button data-m="rm" class="on">推定1RM</button><button data-m="max">最大重量</button><button data-m="vol">ボリューム</button></div>
+          <div class="seg full" id="anRange"><button data-n="4">1か月</button><button data-n="12" class="on">3か月</button><button data-n="24">6か月</button><button data-n="48">1年</button><button data-n="96">全期間</button></div>
+          <div class="seg full" id="anView"><button data-v="raw" class="on">記録ごと</button><button data-v="ma">移動平均</button></div>
+        </div>
+        <div class="chart" id="chart"></div>
+        <div class="legend" id="legend"></div>
+        <div class="scroll" id="anList"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="frame" style="left:80px;top:1760px">
+    <div class="label">5. 設定</div>
+    <div class="phone" id="phoneCfg">
+      <div class="status"></div>
+      <div class="screen active">
+        <div class="nav"><button class="back" aria-label="戻る" id="cfgBack">‹</button><span>設定</span><span></span></div>
+        <div class="scroll">
+          <div class="list-title">記録の入力欄</div>
+          <div class="list-row">強度<span class="seg" id="cfgInt"><button data-v="none">非表示</button><button data-v="RPE" class="on">RPE</button><button data-v="RIR">RIR</button></span></div>
+          <div class="list-title">種目の履歴の表示項目</div>
+          <div class="list-row">ボリューム<span class="seg col" data-k="vol"><button data-v="1" class="on">表示</button><button data-v="0">非表示</button></span></div>
+          <div class="list-row">推定 1RM<span class="seg col" data-k="rm"><button data-v="1" class="on">表示</button><button data-v="0">非表示</button></span></div>
+          <div class="list-row">最大重量<span class="seg col" data-k="max"><button data-v="1" class="on">表示</button><button data-v="0">非表示</button></span></div>
+          <div class="list-row">トップセット<span class="seg col" data-k="top"><button data-v="1">表示</button><button data-v="0" class="on">非表示</button></span></div>
+          <div class="list-row">セット数<span class="seg col" data-k="sets"><button data-v="1">表示</button><button data-v="0" class="on">非表示</button></span></div>
+          <div class="list-title">データ</div>
+          <div class="list-row">データを書き出す<small>CSV ›</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <svg class="links" id="links"></svg>
+</div>
 </div>
 
 <script>
-const PART = { back: ['背中', 'var(--back)'], chest: ['胸', 'var(--chest)'], legs: ['脚', 'var(--legs)'], arms: ['腕', 'var(--arms)'] };
+// 3 つ目はカードのアイコンに入れる文字。省くと部位名をそのまま入れる
+const PART = {
+  chest: ['胸', 'var(--chest)'], shoulder: ['肩', 'var(--shoulder)'], back: ['背中', 'var(--back)'], arms: ['腕', 'var(--arms)'],
+  abs: ['腹', 'var(--abs)'], legs: ['足', 'var(--legs)'], other: ['その他', 'var(--other)', '他'],
+};
+// f4 / f12 は直近 4 週間 / 3 か月の 1 回の記録の数(頻度)
 const EX = [
-  { n: 'ラットプルダウン', p: 'back', d: '10/14', days: 3, prev: [[60, 10], [60, 8]] },
-  { n: 'デッドリフト',     p: 'back', d: '10/14', days: 3, prev: [[135, 5], [125, 5]] },
-  { n: 'ベンチプレス',     p: 'chest', d: '10/14', days: 3, prev: [[80, 8], [80, 7]] },
-  { n: 'ルーマニアンデッド', p: 'back', d: '10/10', days: 7, prev: [[100, 8], [100, 8]] },
-  { n: 'レッグプレス',     p: 'legs', d: '10/10', days: 7, prev: [[180, 10], [180, 10]] },
-  { n: 'トライセップス',   p: 'arms', d: '10/10', days: 7, prev: [[30, 12], [30, 10]] },
-  { n: 'ポーズベンチ',     p: 'chest', d: '10/06', days: 11, prev: [[70, 5], [70, 5]] },
-  { n: 'インクラインDB',   p: 'chest', d: '10/06', days: 11, prev: [[28, 10], [28, 9]] },
-  { n: 'アームカール',     p: 'arms', d: '10/01', days: 16, prev: [[14, 12], [14, 10]] },
+  { n: 'ラットプルダウン', p: 'back', d: '10/14', days: 3, f4: 6, f12: 20, prev: [[60, 10], [60, 8]] },
+  { n: 'デッドリフト',     p: 'back', d: '10/14', days: 3, f4: 7, f12: 22, defSets: 3, prev: [[135, 5], [125, 5]] },
+  { n: 'ベンチプレス',     p: 'chest', d: '10/14', days: 3, f4: 8, f12: 24, prev: [[80, 8], [80, 7]] },
+  { n: 'ルーマニアンデッド', p: 'back', d: '10/10', days: 7, f4: 4, f12: 12, prev: [[100, 8], [100, 8]] },
+  { n: 'レッグプレス',     p: 'legs', d: '10/10', days: 7, f4: 4, f12: 11, prev: [[180, 10], [180, 10]] },
+  { n: 'トライセップス',   p: 'arms', d: '10/10', days: 7, f4: 5, f12: 14, prev: [[30, 12], [30, 10]] },
+  { n: 'ケーブルフライ',   p: 'chest', d: '08/20', days: 58, f4: 0, f12: 2, prev: [[15, 12], [15, 10]], hidden: true },
+  { n: 'ポーズベンチ',     p: 'chest', d: '10/06', days: 11, f4: 2, f12: 10, prev: [[70, 5], [70, 5]] },
+  { n: 'インクラインDB',   p: 'chest', d: '10/06', days: 11, f4: 3, f12: 12, prev: [[28, 10], [28, 9]] },
+  { n: 'アームカール',     p: 'arms', d: '10/01', days: 16, f4: 1, f12: 9, prev: [[14, 12], [14, 10]] },
 ];
-let mode = 'day';
+let mode = 'day', hiddenOpen = false;
+// 見方ごとの並べ方。「指標-向き」で持つ。days は経過日数、f4 / f12 は直近 4 週間 / 3 か月の頻度
+const SORT_KEYS = [['days', '経過日数'], ['f4', '頻度(4 週間)'], ['f12', '頻度(3 か月)']];
+const SORTS = SORT_KEYS.flatMap(([k, t]) => [[`${k}-desc`, `${t}：降順`], [`${k}-asc`, `${t}：昇順`]]);
+const sortCfg = { day: 'days-desc', part: 'days-desc' };
 const $ = (s) => document.querySelector(s);
+const show = (sel) => $(sel).scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 
+/* ホーム */
 function cardHtml(e, i) {
-  return `<button class="card" style="--pc:${PART[e.p][1]}" data-i="${i}">
-    <div class="name">${e.n}</div><div class="meta"><span class="days">${e.days}</span>日前 ${e.d}</div></button>`;
+  return `<button class="card ${e.hidden ? 'off' : ''}" style="--pc:${PART[e.p][1]}" data-i="${i}">
+    <span class="ico">${PART[e.p][2] ?? PART[e.p][0]}</span><span class="txt"><div class="name">${e.n}</div><div class="meta">${e.days == null ? '<span class="days">未実施</span>' : `<span class="days">${e.days}</span>日前 ${e.d}`}</div></span></button>`;
 }
+function openMenu(i) {
+  const m = $('#menu');
+  m.innerHTML = `<div class="sheet"><b>${EX[i].n}</b><button data-a="cfg">種目の設定</button>
+    ${EX[i].hidden ? '<button data-a="show">再表示</button>' : '<button data-a="hide">非表示</button>'}<button data-a="del" class="danger">削除</button><button data-a="cancel">キャンセル</button></div>`;
+  m.classList.add('open');
+  m.querySelectorAll('button').forEach((b) => b.onclick = () => {
+    const a = b.dataset.a;
+    if (a === 'hide') EX[i].hidden = true;
+    if (a === 'show') EX[i].hidden = false;
+    m.classList.remove('open'); renderGrid();
+    if (a === 'cfg') openExForm(i, '#phoneHome');
+    if (a === 'del') { openDel(i); show('#phoneDel'); }
+  });
+}
+
+/* 種目の削除。記録ごと消えるので「削除」と入力させてから消す */
+let delTarget = null;
+function openDel(i) {
+  delTarget = i;
+  $('#delName').textContent = EX[i].n;
+  $('#delWarn').innerHTML = `この種目の記録 ${exDays(EX[i]).length} 回分と、そのメモがすべて消えます。<br>消した記録は元に戻せません。`;
+  $('#delInput').value = ''; $('#delOk').disabled = true;
+}
+$('#delInput').oninput = () => { $('#delOk').disabled = $('#delInput').value.trim() !== '削除'; };
+$('#delCancel').onclick = () => show('#phoneHome');
+$('#delOk').onclick = () => { EX[delTarget].deleted = true; renderGrid(); show('#phoneHome'); };
+const days = (i) => EX[i].days ?? Infinity; // 未実施の種目は経過日数が最大として扱う
+const val = (i, k) => (k === 'days' ? days(i) : EX[i][k] ?? 0);
+// 値が同じなら、経過日数が大きい順
+const sortIds = (ids, rule) => {
+  const [k, dir] = rule.split('-'), sign = dir === 'asc' ? -1 : 1;
+  return [...ids].sort((a, b) => sign * (val(b, k) - val(a, k)) || days(b) - days(a));
+};
+// 部位ごとの区切り。種目の無い部位は出さない。
+// 経過日数で並べるときの区切りは部位の順、頻度で並べるときは表示中の種目の頻度の合計の順
+function partGroupsHtml(ids, rule) {
+  const [k, dir] = rule.split('-'), keys = Object.keys(PART);
+  const sum = (p) => ids.filter((i) => EX[i].p === p).reduce((a, i) => a + val(i, k), 0);
+  if (k !== 'days') keys.sort((a, b) => (dir === 'asc' ? -1 : 1) * (sum(b) - sum(a)));
+  return keys.map((k) => {
+    const v = sortIds(ids.filter((i) => EX[i].p === k), rule);
+    return v.length ? `<div class="group">${PART[k][0]}</div><div class="grid">${v.map((i) => cardHtml(EX[i], i)).join('')}</div>` : '';
+  }).join('');
+}
+// 並べ替えのダイアログ。並べ方を 1 つだけ選ぶ
+function sortHtml(m, rule) {
+  return `<div class="sheet dialog"><b>並べ替え<small>[${m === 'day' ? 'すべて' : '部位'}]</small></b>
+    ${SORTS.map(([v, t]) => `<button class="opt" data-v="${v}">${t}<span>${v === rule ? '✓' : ''}</span></button>`).join('')}
+    <button data-a="close">キャンセル</button></div>`;
+}
+function openSort() {
+  const s = $('#sortMenu');
+  s.innerHTML = sortHtml(mode, sortCfg[mode]); s.classList.add('open');
+  s.querySelectorAll('[data-v]').forEach((b) => b.onclick = () => { sortCfg[mode] = b.dataset.v; renderGrid(); s.classList.remove('open'); });
+  s.querySelector('[data-a="close"]').onclick = () => s.classList.remove('open');
+}
+$('#toSort').onclick = openSort;
 function renderGrid() {
+  const live = EX.map((e, i) => i).filter((i) => !EX[i].deleted);
   if (mode === 'day') {
-    const order = EX.map((e, i) => i).sort((a, b) => EX[b].days - EX[a].days);
+    const order = sortIds(live.filter((i) => !EX[i].hidden), sortCfg.day);
     $('#gridWrap').innerHTML = `<div class="grid">${order.map((i) => cardHtml(EX[i], i)).join('')}</div>`;
   } else {
-    const groups = {};
-    EX.forEach((e, i) => (groups[PART[e.p][0]] = groups[PART[e.p][0]] || []).push(cardHtml(e, i)));
-    $('#gridWrap').innerHTML = Object.entries(groups).map(([k, v]) => `<div class="group">${k}</div><div class="grid">${v.join('')}</div>`).join('');
+    $('#gridWrap').innerHTML = partGroupsHtml(live.filter((i) => !EX[i].hidden), sortCfg.part);
   }
-  document.querySelectorAll('.card').forEach((b) => b.onclick = () => openRec(+b.dataset.i));
+  // 非表示の種目は、グリッドの一番下に折りたたんでまとめる
+  const hid = live.filter((i) => EX[i].hidden);
+  if (hid.length) {
+    $('#gridWrap').innerHTML += `<button class="hidden-head" id="hiddenHead">${hiddenOpen ? '▾' : '▸'} 非表示の種目(${hid.length})</button>`
+      + (hiddenOpen ? `<div class="grid">${hid.map((i) => cardHtml(EX[i], i)).join('')}</div>` : '');
+    $('#hiddenHead').onclick = () => { hiddenOpen = !hiddenOpen; renderGrid(); };
+  }
+  document.querySelectorAll('#gridWrap .card').forEach((b) => {
+    let t = null, long = false;
+    b.onpointerdown = () => { long = false; t = setTimeout(() => { long = true; openMenu(+b.dataset.i); }, 500); };
+    b.onpointerup = b.onpointerleave = () => clearTimeout(t);
+    b.oncontextmenu = (ev) => ev.preventDefault();
+    b.onclick = () => { if (!long) { openExHist(+b.dataset.i); show('#phoneExHist'); } };
+  });
 }
 $('#segDay').onclick = () => { mode = 'day'; $('#segDay').classList.add('on'); $('#segPart').classList.remove('on'); renderGrid(); };
 $('#segPart').onclick = () => { mode = 'part'; $('#segPart').classList.add('on'); $('#segDay').classList.remove('on'); renderGrid(); };
+$('#toCfg').onclick = () => show('#phoneCfg');
+$('#cfgBack').onclick = () => show('#phoneHome');
+
+/* 種目の追加と種目の設定。同じ画面を使い、設定では今の値を入れて開く */
+let addPart = 'back', addSets = 0, editIdx = null, formBack = '#phoneHome';
+const partsHtml = (sel) => Object.entries(PART).map(([k, [name, color]]) =>
+  `<button data-p="${k}" class="${k === sel ? 'on' : ''}" style="--pc:${color}"><span class="ico"></span>${name}</button>`).join('');
+function renderParts() {
+  $('#addParts').innerHTML = partsHtml(addPart);
+  document.querySelectorAll('#addParts button').forEach((b) => b.onclick = () => { addPart = b.dataset.p; renderParts(); });
+}
+function openExForm(i, back) {
+  const e = i == null ? null : EX[i];
+  editIdx = i; formBack = back;
+  $('#addTitle').textContent = e ? '種目の設定' : '種目を追加';
+  $('#addOk').textContent = e ? '保存' : '追加';
+  $('#addName').value = e ? e.n : '';
+  addPart = e ? e.p : 'back'; addSets = e ? e.defSets || 0 : 0;
+  $('#addSets').textContent = addSets; $('#addOk').disabled = !$('#addName').value.trim();
+  renderParts(); show('#phoneAdd');
+}
+const MAX_SETS = 10;
+$('#addMinus').onclick = () => { addSets = Math.max(0, addSets - 1); $('#addSets').textContent = addSets; };
+$('#addPlus').onclick = () => { addSets = Math.min(MAX_SETS, addSets + 1); $('#addSets').textContent = addSets; };
+$('#addName').oninput = () => { $('#addOk').disabled = !$('#addName').value.trim(); };
+$('#toAdd').onclick = () => openExForm(null, '#phoneHome');
+$('#addCancel').onclick = () => show(formBack);
+$('#addOk').onclick = () => {
+  const v = { n: $('#addName').value.trim(), p: addPart, defSets: addSets };
+  if (editIdx == null) EX.push({ ...v, d: '', days: null, prev: [] }); else Object.assign(EX[editIdx], v);
+  renderGrid();
+  if (formBack === '#phoneExHist') openExHist(editIdx);
+  show(formBack);
+};
+
+/* 種目の履歴 */
+let cur = null, sets = [], dayMemo = '', focus = null, buf = '';
+const e1rm = (w, r) => (w * 36 / (37 - r)).toFixed(1);
+// ダミーの実施日。最終実施日から 4 日おきにさかのぼる
+const exDays = (e) => {
+  if (!e.prev.length) return []; // 追加したばかりの種目
+  const [m, d] = e.d.split('/').map(Number);
+  return Array.from({ length: 12 }, (_, k) => {
+    const dt = new Date(2026, m - 1, d - k * 4), w = e.prev[0][0] - (k % 4) * 2.5, r = e.prev[0][1];
+    return { date: `${dt.getFullYear()}/${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}`, sets: k === 0 ? e.prev : [[w, r], [w, r - 1]], memo: k % 3 === 1 ? 'グリップを狭くした' : '' };
+  });
+};
+// 種目の履歴に出す項目。設定画面で切り替える
+const kg = (v) => v.toFixed(1);
+const COLS = [
+  { k: 'vol', name: 'ボリューム', f: (s) => kg(s.reduce((a, [w, r]) => a + w * r, 0)) },
+  { k: 'rm', name: '推定 1RM', f: (s) => kg(Math.max(...s.map(([w, r]) => +e1rm(w, r)))) },
+  { k: 'max', name: '最大重量', f: (s) => kg(Math.max(...s.map(([w]) => w))) },
+  // 最も重いセット。同じ重さなら回数の多いほう
+  { k: 'top', name: 'トップセット', f: (s) => { const [w, r] = [...s].sort((a, b) => b[0] - a[0] || b[1] - a[1])[0]; return `${w}×${r}`; } },
+  { k: 'sets', name: 'セット数', f: (s) => String(s.length) },
+];
+const showCols = { vol: true, rm: true, max: true, top: false, sets: false };
+function openExHist(i) {
+  cur = EX[i];
+  $('#exHistTitle').textContent = cur.n;
+  const days = histDays(cur), cols = COLS.filter((c) => showCols[c.k]);
+  $('#colhead').textContent = cols.map((c) => c.name).join(' / ') + (cols.some((c) => ['vol', 'rm', 'max'].includes(c.k)) ? '(kg)' : '');
+  $('#exHist').innerHTML = days.map((x, k) => histRowHtml(x, k)).join('')
+    || '<p class="sub" style="padding:16px">まだ記録がありません。右上の「＋」で今日の記録を始めます。</p>';
+  document.querySelectorAll('#exHist .hrow').forEach((b) => {
+    const x = days[+b.dataset.k];
+    let t = null, long = false;
+    b.onpointerdown = () => { long = false; t = setTimeout(() => { long = true; openHistMenu(x); }, 500); };
+    b.onpointerup = b.onpointerleave = () => clearTimeout(t);
+    b.oncontextmenu = (ev) => ev.preventDefault();
+    b.onclick = () => { if (!long) { openRec(i, x.sets, x.memo, x.date); show('#phoneRec'); } };
+  });
+}
+// 消した 1 回の記録は、種目の履歴に出さない
+const histDays = (e) => exDays(e).filter((x) => !(e.delDates || []).includes(x.date));
+function histRowHtml(x, k) {
+  const cols = COLS.filter((c) => showCols[c.k]);
+  return `<button class="hrow" data-k="${k}"><span class="v">${cols.map((c) => c.f(x.sets)).join(' / ')}</span>${x.memo ? '<span aria-label="メモあり">📝</span>' : ''}<span class="dt">${x.date}</span><span class="chev">›</span></button>`;
+}
+/* 1 回の記録の削除。長押しのメニューか左スワイプの「削除」から、確認のシートを経て消す */
+const recMenuHtml = (x) => `<div class="sheet"><b>${withWeekday(x.date)} の記録</b><button data-a="ask" class="danger">削除</button><button data-a="cancel">キャンセル</button></div>`;
+const recDelHtml = (x) => `<div class="sheet"><b>${withWeekday(x.date)} の記録を削除</b>
+  <p class="sheet-note">セット ${x.sets.length} 個${x.memo ? 'とメモ' : ''}が消えます。元に戻せません。</p>
+  <button data-a="del" class="danger">記録を削除</button><button data-a="cancel">キャンセル</button></div>`;
+function openHistMenu(x) {
+  const m = $('#histMenu');
+  m.innerHTML = recMenuHtml(x); m.classList.add('open');
+  m.querySelector('[data-a="ask"]').onclick = () => { m.innerHTML = recDelHtml(x); bindDel(); };
+  const bindDel = () => m.querySelectorAll('button').forEach((b) => {
+    if (b.dataset.a === 'del') b.onclick = () => { (cur.delDates = cur.delDates || []).push(x.date); m.classList.remove('open'); openExHist(EX.indexOf(cur)); };
+    if (b.dataset.a === 'cancel') b.onclick = () => m.classList.remove('open');
+  });
+  bindDel();
+}
+$('#toToday').onclick = () => { openRec(EX.indexOf(cur)); show('#phoneRec'); };
+$('#toExCfg').onclick = () => openExForm(EX.indexOf(cur), '#phoneExHist');
+$('#toAn').onclick = () => { renderAn(); show('#phoneAn'); };
+$('#exBack').onclick = () => show('#phoneHome');
 
 /* 記録画面 */
-let cur = null, sets = [], focus = null, buf = '';
-function openRec(i) {
+const TODAY = '2026/10/17';
+const withWeekday = (s) => { const [y, m, d] = s.split('/').map(Number); return `${s}(${'日月火水木金土'[new Date(y, m - 1, d).getDay()]})`; };
+let recDate = TODAY, recTime = '09:12', editing = true;
+// 日付と時刻を選ぶシート。見本なので 2026 年 10 月だけを出し、今日より後は選べない
+function calHtml(sel, time) {
+  const recDays = new Set(exDays(cur).map((x) => x.date));
+  const blanks = new Date(2026, 9, 1).getDay();
+  const days = Array.from({ length: 31 }, (_, k) => {
+    const s = `2026/10/${String(k + 1).padStart(2, '0')}`;
+    return `<button data-d="${s}" class="${s === sel ? 'on' : ''} ${recDays.has(s) ? 'rec' : ''}" ${s > TODAY ? 'disabled' : ''}>${k + 1}</button>`;
+  });
+  return `<div class="sheet"><div class="cal"><div class="cal-head"><span>‹</span>2026年10月<span>›</span></div>
+    <div class="cal-grid">${[...'日月火水木金土'].map((w) => `<div class="wd">${w}</div>`).join('')}${'<div></div>'.repeat(blanks)}${days.join('')}</div></div>
+    <div class="cal-time">時刻<input type="time" value="${time}"></div>
+    <div class="cal-btns"><button data-a="cancel">キャンセル</button><button data-a="ok" class="ok">完了</button></div></div>`;
+}
+$('#recDate').onclick = () => {
+  const m = $('#recCal');
+  let sel = recDate;
+  m.innerHTML = calHtml(recDate, recTime); m.classList.add('open');
+  m.querySelectorAll('button').forEach((b) => b.onclick = () => {
+    if (b.dataset.d) { sel = b.dataset.d; m.querySelectorAll('[data-d]').forEach((x) => x.classList.toggle('on', x === b)); return; }
+    if (b.dataset.a === 'ok') { recDate = sel; recTime = m.querySelector('input').value; renderRecNav(); }
+    m.classList.remove('open');
+  });
+};
+// 今日の記録は編集モード、前日以前の記録は閲覧モードで開く。前日以前は「編集」で編集モードに切り替える
+function renderRecNav() {
+  const past = recDate < TODAY, b = $('#recDate');
+  $('#recEdit').textContent = past ? (editing ? '完了' : '編集') : '';
+  b.disabled = !editing; b.classList.toggle('plain', !editing);
+  b.querySelector('span').textContent = withWeekday(recDate) + (editing ? ' ▾' : '');
+}
+$('#recEdit').onclick = () => { editing = !editing; closePad(); renderRecNav(); renderSets(); };
+// 重さと回数が入った行だけが記録になる。空の行は保存しない
+const filled = (s) => s.w != null && s.r != null;
+function setsViewHtml(list, memo) {
+  return list.filter(filled).map((s, i) => `
+    <div class="set view">
+      <div class="row"><span class="no">${i + 1}</span><span class="vval">${Number(s.w).toFixed(1)}</span><span class="unit">kg ×</span><span class="vval">${s.r}</span><span class="unit">回</span>
+        <span style="flex:1"></span>${cfg.intensity === 'none' ? '' : `<span class="sub">${cfg.intensity} ${s.rpe || '–'}</span>`}</div>
+      <div class="sub">1RM ${e1rm(s.w, s.r)}kg</div>
+    </div>`).join('') + (memo ? `<div class="memo-view"><div class="sub">メモ</div>${memo}</div>` : '');
+}
+function openRec(i, init = [], memo = '', date = TODAY) {
   cur = EX[i];
   $('#recTitle').textContent = cur.n;
-  $('#prev').textContent = '前回  ' + cur.prev.map(([w, r]) => `${w}kg×${r}`).join(' / ');
-  sets = [];
-  newSet();
+  recDate = date; editing = date >= TODAY;
+  renderRecNav();
+  $('#prev').textContent = '前回  ' + (cur.prev.map(([w, r]) => `${w}kg×${r}`).join(' / ') || 'なし');
+  dayMemo = memo;
+  // 新しい記録は、種目の設定の「最初に並べるセット数」だけ空の行を並べて開く
+  sets = init.length ? init.map(([w, r]) => ({ w, r, rpe: '' }))
+    : Array.from({ length: cur.defSets || 0 }, () => ({ w: null, r: null, rpe: '' }));
   closePad();
   renderSets();
 }
+const cfg = { intensity: 'RPE' }; // 設定画面で切り替える
 function newSet() {
-  const last = sets[sets.length - 1];
-  const [w, r] = last ? [last.w, last.r] : cur.prev[0];
-  sets.push({ w, r, rpe: '', memo: '', done: false, ghostW: true, ghostR: true });
+  const last = [...sets].reverse().find(filled);
+  const [w, r] = last ? [last.w, last.r] : (cur.prev[0] || [null, null]);
+  sets.push({ w, r, rpe: '' });
 }
-const e1rm = (w, r) => (w * 36 / (37 - r)).toFixed(1);
-function renderSets() {
-  $('#sets').innerHTML = sets.map((s, i) => `
-    <div class="set">
+/* セットの行の削除。長押しのメニューか左スワイプの「削除」から消す。
+   足し直せるので確認は出さない。最後の 1 行だけは 1 回の記録ごと消えるので確認する */
+let setLong = false;
+function openSetMenu(i) {
+  const m = $('#recCal');
+  const lastRec = filled(sets[i]) && sets.filter(filled).length === 1;
+  const ask = lastRec
+    ? `<p class="sheet-note">最後のセットを消すと、この記録ごと消えます。元に戻せません。</p><button data-a="del" class="danger">記録を削除</button>`
+    : '<button data-a="del" class="danger">削除</button>';
+  m.innerHTML = `<div class="sheet"><b>${i + 1} セット目</b>${ask}<button data-a="cancel">キャンセル</button></div>`;
+  m.classList.add('open');
+  m.querySelectorAll('button').forEach((b) => b.onclick = () => {
+    m.classList.remove('open');
+    if (b.dataset.a !== 'del') return;
+    sets.splice(i, 1); closePad(); renderSets();
+    if (lastRec) show('#phoneExHist');
+  });
+}
+function setsEditHtml(list, memo) {
+  const cls = (s, i, f) => `cell ${focus && focus.i === i && focus.f === f ? 'focus' : ''} ${s[f] == null ? 'empty' : ''}`;
+  return list.map((s, i) => `
+    <div class="set" data-s="${i}">
       <div class="row">
         <span class="no">${i + 1}</span>
-        <button class="copy" data-c="w" data-i="${i}">↪</button>
-        <button class="cell ${s.ghostW ? 'ghost' : ''} ${focus && focus.i === i && focus.f === 'w' ? 'focus' : ''}" data-f="w" data-i="${i}">${Number(s.w).toFixed(1)}</button><span class="unit">kg</span>
-        <button class="copy" data-c="r" data-i="${i}">↪</button>
-        <button class="cell ${s.ghostR ? 'ghost' : ''} ${focus && focus.i === i && focus.f === 'r' ? 'focus' : ''}" data-f="r" data-i="${i}">${s.r}</button><span class="unit">回</span>
-        <button class="done ${s.done ? 'on' : ''}" data-d="${i}">✓</button>
+        <button class="${cls(s, i, 'w')}" data-f="w" data-i="${i}">${s.w == null ? '' : Number(s.w).toFixed(1)}</button><span class="unit">kg</span>
+        <button class="${cls(s, i, 'r')}" data-f="r" data-i="${i}">${s.r ?? ''}</button><span class="unit">回</span>
       </div>
       <div class="row">
-        <span class="sub">1RM ${e1rm(s.w, s.r)}kg</span>
-        ${s.done && s.w > cur.prev[0][0] ? '<span class="pr">PR</span>' : ''}
-        <span style="flex:1"></span><span class="sub">RPE</span>
-        <input class="memo" style="flex:none;width:56px;text-align:center" data-rpe="${i}" value="${s.rpe}" placeholder="–">
+        <span class="sub">1RM ${filled(s) ? e1rm(s.w, s.r) + 'kg' : '–'}</span>
+        ${cur.prev.length && s.w > cur.prev[0][0] ? '<span class="pr">PR</span>' : ''}
+        <span style="flex:1"></span>
+        ${cfg.intensity === 'none' ? '' : `<span class="sub">${cfg.intensity}</span>
+        <input class="memo" style="flex:none;width:56px;text-align:center" data-rpe="${i}" value="${s.rpe}" placeholder="–">`}
       </div>
-      <div class="row"><input class="memo" data-memo="${i}" placeholder="メモ" value="${s.memo}"></div>
-    </div>`).join('') + '<button class="addset" id="addSet">＋ セット追加</button>';
+    </div>`).join('') + '<button class="addset" id="addSet" aria-label="セットを追加">＋</button>'
+    + `<div class="daymemo"><input class="memo" id="dayMemo" placeholder="メモ" value="${memo}"></div>`;
+}
+function renderSets() {
+  if (!editing) { $('#sets').innerHTML = setsViewHtml(sets, dayMemo); return; }
+  $('#sets').innerHTML = setsEditHtml(sets, dayMemo);
 
-  document.querySelectorAll('.cell').forEach((b) => b.onclick = () => openPad(+b.dataset.i, b.dataset.f));
-  document.querySelectorAll('.copy').forEach((b) => b.onclick = () => {
-    const i = +b.dataset.i, f = b.dataset.c, src = i > 0 ? sets[i - 1] : { w: cur.prev[0][0], r: cur.prev[0][1] };
-    sets[i][f] = src[f]; sets[i][f === 'w' ? 'ghostW' : 'ghostR'] = false; renderSets();
-  });
-  document.querySelectorAll('.done').forEach((b) => b.onclick = () => {
-    const s = sets[+b.dataset.d];
-    s.done = !s.done; s.ghostW = s.ghostR = false;
-    if (s.done && +b.dataset.d === sets.length - 1) newSet();
-    renderSets();
+  document.querySelectorAll('#sets .cell').forEach((b) => b.onclick = () => { if (setLong) { setLong = false; return; } openPad(+b.dataset.i, b.dataset.f); });
+  document.querySelectorAll('#sets .set').forEach((d) => {
+    let t = null;
+    d.onpointerdown = () => { setLong = false; t = setTimeout(() => { setLong = true; openSetMenu(+d.dataset.s); }, 500); };
+    d.onpointerup = d.onpointerleave = () => clearTimeout(t);
+    d.oncontextmenu = (ev) => ev.preventDefault();
   });
   document.querySelectorAll('[data-rpe]').forEach((b) => b.oninput = () => sets[+b.dataset.rpe].rpe = b.value);
-  document.querySelectorAll('[data-memo]').forEach((b) => b.oninput = () => sets[+b.dataset.memo].memo = b.value);
+  $('#dayMemo').oninput = (ev) => { dayMemo = ev.target.value; };
   $('#addSet').onclick = () => { newSet(); renderSets(); $('#sets').scrollTop = 1e5; };
 }
 /* キーパッド */
@@ -210,12 +780,116 @@ document.querySelectorAll('#pad .adj button').forEach((b) => b.onclick = () => {
   setVal(Math.max(0, +s[focus.f] + d));
 });
 function setVal(v) {
-  const s = sets[focus.i]; s[focus.f] = v; s[focus.f === 'w' ? 'ghostW' : 'ghostR'] = false; renderSets();
+  sets[focus.i][focus.f] = v; renderSets();
 }
-$('#back').onclick = () => closePad();
+$('#back').onclick = () => { closePad(); show('#phoneExHist'); };
+function bindCfg(sel, apply) {
+  document.querySelectorAll(`${sel} button`).forEach((b) => b.onclick = () => {
+    document.querySelectorAll(`${sel} button`).forEach((x) => x.classList.toggle('on', x === b));
+    apply(b.dataset.v); renderSets();
+  });
+}
+bindCfg('#cfgInt', (v) => { cfg.intensity = v; });
+document.querySelectorAll('.seg.col').forEach((seg) => seg.querySelectorAll('button').forEach((b) => b.onclick = () => {
+  const on = b.dataset.v === '1';
+  if (!on && Object.values(showCols).filter(Boolean).length === 1 && showCols[seg.dataset.k]) return; // 最後の 1 つは非表示にできない
+  showCols[seg.dataset.k] = on;
+  seg.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+  openExHist(EX.indexOf(cur));
+}));
+
+/* 分析 */
+let anMetric = 'rm', anN = 12, anView = 'raw';
+const MA_N = 5;
+const movingAvg = (d) => d.map((_, i) => {
+  const w = d.slice(Math.max(0, i - MA_N + 1), i + 1);
+  return +(w.reduce((a, v) => a + v, 0) / w.length).toFixed(1);
+});
+const series = (e, m, n) => {
+  const [w, r] = e.prev[0], end = { rm: w * 36 / (37 - r), max: w, vol: w * r * 3 }[m];
+  const start = end * 0.8;
+  return Array.from({ length: n }, (_, i) => +(start + (end - start) * (i / (n - 1)) + Math.sin(i * 1.7) * end * 0.02).toFixed(1));
+};
+function renderAn() {
+  if (!cur.prev.length) { $('#anTitle').textContent = cur.n; $('#chart').innerHTML = '<p class="sub">まだ記録がありません。</p>'; $('#legend').innerHTML = $('#anList').innerHTML = ''; return; }
+  const e = cur, raw = series(e, anMetric, anN), d = anView === 'ma' ? movingAvg(raw) : raw, W = 340, H = 190, pad = 20;
+  $('#anTitle').textContent = e.n;
+  const lo = Math.min(...d), hi = Math.max(...d), x = (i) => pad + i * (W - 2 * pad) / (d.length - 1), y = (v) => H - pad - (v - lo) / (hi - lo || 1) * (H - 2 * pad);
+  $('#chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}"><polyline fill="none" stroke="var(--accent)" stroke-width="2" points="${d.map((v, i) => `${x(i)},${y(v)}`).join(' ')}"/><text x="${pad}" y="12" font-size="10" fill="#777">${hi}</text><text x="${pad}" y="${H - 4}" font-size="10" fill="#777">${lo}</text></svg>`;
+  $('#legend').innerHTML = anView === 'ma' ? `<span>直近 ${MA_N} 回の実施の平均</span>` : '';
+  $('#anList').innerHTML = exDays(e).slice(0, 2).map((x) => [x.date.slice(5), x.sets]).map(([dt, s]) => `<div class="row-sub"><span>${dt}</span><span>${s.map(([w, r]) => `${w}×${r}`).join(' / ')}</span></div>`).join('');
+}
+document.querySelectorAll('#anView button').forEach((b) => b.onclick = () => { anView = b.dataset.v; document.querySelectorAll('#anView button').forEach((x) => x.classList.toggle('on', x === b)); renderAn(); });
+document.querySelectorAll('#anMetric button').forEach((b) => b.onclick = () => { anMetric = b.dataset.m; document.querySelectorAll('#anMetric button').forEach((x) => x.classList.toggle('on', x === b)); renderAn(); });
+document.querySelectorAll('#anRange button').forEach((b) => b.onclick = () => { anN = +b.dataset.n; document.querySelectorAll('#anRange button').forEach((x) => x.classList.toggle('on', x === b)); renderAn(); });
+$('#anBack').onclick = () => show('#phoneExHist');
+
+/* 画面間の矢印。操作する要素から遷移先の画面へ引く。「‹」の矢印は引かない。
+   out / in は線が出る辺と入る辺(l か r)。省略すると互いに向き合う辺。at は入る位置(画面の高さに対する割合) */
+const LINKS = [
+  { from: '#gridWrap .card', to: '#phoneExHist', label: 'カードをタップ' },
+  { from: '#toAdd', to: '#phoneAdd', out: 'r', in: 'r', at: 0.15, label: '＋' },
+  { from: '#gridWrap .grid .card:nth-child(3)', to: '#phoneMenu', out: 'r', in: 'l', at: 0.6, label: '長押し' },
+  { from: '#phoneMenu .danger', to: '#phoneDel', out: 'r', in: 'l', label: '削除' },
+  { from: '#toSort', to: '#phoneSort', out: 'l', in: 'l', at: 0.1, label: '↕' },
+  { from: '#holdMenuDemo .danger', to: '#phoneConfirm', out: 'r', in: 'l', label: '削除' },
+  { from: '#recDate', to: '#phoneDate', out: 'r', in: 'r', at: 0.1, label: '日付をタップ' },
+  { from: '#toCfg', to: '#phoneCfg', out: 'r', in: 'r', at: 0.1, label: '⚙️' },
+  { from: '#toAn', to: '#phoneAn', label: '📈' },
+  { from: '#toToday', to: '#phoneRec', out: 'r', in: 'r', at: 0.08, label: '＋(新しい記録)' },
+  { from: '#exHist .hrow:nth-child(2)', to: '#phoneRecView', out: 'r', in: 'l', at: 0.3, label: '行をタップ(前日以前)' },
+];
+const MARKER = '<defs><marker id="lk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)" stroke="none"/></marker></defs>';
+function drawLinks() {
+  const c = $('#canvas').getBoundingClientRect();
+  const box = (el) => { const r = el.getBoundingClientRect(); return { l: r.left - c.left, r: r.right - c.left, t: r.top - c.top, b: r.bottom - c.top }; };
+  $('#links').innerHTML = MARKER + LINKS.map((k) => {
+    const s = document.querySelector(k.from), t = document.querySelector(k.to);
+    if (!s || !t) return '';
+    const a = box(s), b = box(t), toRight = b.l > a.r;
+    const out = (k.out || (toRight ? 'r' : 'l')) === 'r' ? 1 : -1, inn = (k.in || (toRight ? 'l' : 'r')) === 'r' ? 1 : -1;
+    const sx = out > 0 ? a.r : a.l, sy = (a.t + a.b) / 2, tx = inn > 0 ? b.r : b.l;
+    // at が無ければ、遷移先の画面の辺のうち、元の要素の高さに近い位置に当てる
+    const ty = k.at ? b.t + (b.b - b.t) * k.at : Math.min(Math.max(sy, b.t + 40), b.b - 40);
+    const d = Math.max(90, Math.abs(tx - sx) / 2);
+    return `<path d="M${sx},${sy} C${sx + out * d},${sy} ${tx + inn * d},${ty} ${tx},${ty}" marker-end="url(#lk)"/>
+      <circle cx="${sx}" cy="${sy}" r="4"/>
+      <text x="${tx + inn * 10}" y="${ty - 10}" text-anchor="${inn > 0 ? 'start' : 'end'}">${k.label}</text>`;
+  }).join('');
+}
+new MutationObserver((ms) => { if (ms.some((m) => !$('#links').contains(m.target))) drawLinks(); })
+  .observe($('#canvas'), { childList: true, subtree: true, attributes: true });
+window.addEventListener('resize', drawLinks);
+document.addEventListener('scroll', drawLinks, true);
 
 renderGrid();
+// 長押しメニューの図の背景は、ホームと同じグリッド(操作はできない)
+$('#menuDemoGrid').innerHTML = $('#gridWrap').innerHTML;
+renderParts();
+openDel(1);
+// 並べ替えの図は、部位の見方で「頻度(4 週間)：降順」を選んだ状態
+$('#partOrderDemo').innerHTML = partGroupsHtml(EX.map((e, i) => i).filter((i) => !EX[i].hidden), 'f4-desc');
+$('#sortDemo').innerHTML = sortHtml('part', 'f4-desc');
+openExHist(1);
+renderAn();
 openRec(1);
+// 記録画面の初期表示は、2 セット目を足した直後の状態(wireframes.md の図と同じ)
+sets = [{ w: 135, r: 5, rpe: '9' }, { w: 135, r: 5, rpe: '' }];
+renderSets();
+$('#dateDemo').innerHTML = calHtml('2026/10/17', '09:12');
+// 種目の設定と新しい記録の図は、デッドリフトの最初に並べるセット数を 3 にした状態。見本なので id は外す
+$('#cfgPartsDemo').innerHTML = partsHtml('back');
+$('#newRecDemo').innerHTML = setsEditHtml([0, 1, 2].map(() => ({ w: null, r: null, rpe: '' })), '').replace(/ id="[^"]*"/g, '');
+// 記録の削除の図は、デッドリフトの 10/10 の記録(2 行目、メモつき)を消す流れ
+const delDays = exDays(EX[1]).slice(0, 8), delRows = delDays.map((x, k) => histRowHtml(x, k));
+$('#swipeDemo').innerHTML = delRows[0] + `<div class="swipe">${delRows[1]}<button class="swipe-del">削除</button></div>` + delRows.slice(2).join('');
+$('#holdDemo').innerHTML = $('#confirmDemo').innerHTML = delRows.join('');
+$('#holdMenuDemo').innerHTML = recMenuHtml(delDays[1]);
+$('#confirmMenuDemo').innerHTML = recDelHtml(delDays[1]);
+// 閲覧モードの図は、デッドリフトの 10/10 の記録(メモつき)。前回は 1 つ前の 10/06 の記録
+const viewDays = exDays(EX[1]);
+$('#viewPrev').textContent = '前回  ' + viewDays[2].sets.map(([w, r]) => `${w}kg×${r}`).join(' / ');
+$('#viewSets').innerHTML = setsViewHtml(viewDays[1].sets.map(([w, r], k) => ({ w, r, rpe: k ? '9' : '8' })), viewDays[1].memo);
 </script>
 </body>
 </html>
