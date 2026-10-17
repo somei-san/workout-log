@@ -15,6 +15,9 @@ struct HomeView: View {
     @State private var cards: [ExerciseCard] = []
     @State private var path: [Route] = []
     @State private var isAdding = false
+    @State private var showsHidden = false
+    @State private var editing: Exercise?
+    @State private var deleting: Exercise?
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -36,6 +39,15 @@ struct HomeView: View {
                             grid(group)
                         }
                     }
+                }
+                let hidden = sorted(cards.filter(\.exercise.isHidden))
+                if !hidden.isEmpty {
+                    DisclosureGroup("非表示の種目(\(hidden.count))", isExpanded: $showsHidden) {
+                        grid(hidden)
+                    }
+                    .font(.footnote)
+                    .padding(.horizontal)
+                    .padding(.vertical, 12)
                 }
             }
             .overlay {
@@ -70,6 +82,12 @@ struct HomeView: View {
             .sheet(isPresented: $isAdding) {
                 ExerciseFormView(exercise: Exercise(name: "", part: .chest))
             }
+            .sheet(item: $editing) { exercise in
+                ExerciseFormView(exercise: exercise)
+            }
+            .sheet(item: $deleting) { exercise in
+                ExerciseDeleteView(exercise: exercise)
+            }
         }
         .onChange(of: scenePhase) {
             if scenePhase == .active { today = .today() }
@@ -96,9 +114,31 @@ struct HomeView: View {
                     ExerciseCardView(card: card, today: today)
                 }
                 .buttonStyle(.plain)
+                .contextMenu {
+                    let exercise = card.exercise
+                    Section(exercise.name) {
+                        Button("種目の設定", systemImage: "gearshape") { editing = exercise }
+                        if exercise.isHidden {
+                            Button("再表示", systemImage: "eye") { setHidden(exercise, false) }
+                        } else {
+                            Button("非表示", systemImage: "eye.slash") { setHidden(exercise, true) }
+                        }
+                        Button("削除", systemImage: "trash", role: .destructive) { deleting = exercise }
+                    }
+                }
             }
         }
         .padding(.horizontal, 8)
+    }
+
+    private func setHidden(_ exercise: Exercise, _ isHidden: Bool) {
+        var exercise = exercise
+        exercise.isHidden = isHidden
+        do {
+            try database.writer.write { db in try exercise.update(db) }
+        } catch {
+            print("種目を非表示にできない: \(error)")
+        }
     }
 
     /// 経過日数の降順。未実施の種目は経過日数がいちばん大きいとして先頭に置く。同じなら名前の順
