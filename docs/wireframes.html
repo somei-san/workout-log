@@ -148,7 +148,7 @@
   .del .go:disabled { opacity: .35; }
   /* キャンバスと画面間の矢印 */
   .canvas-wrap { overflow: auto; }
-  .canvas { position: relative; width: 1600px; height: 5300px; }
+  .canvas { position: relative; width: 3360px; height: 3900px; }
   .frame { position: absolute; width: 390px; }
   .ph { width: 390px; height: 170px; border: 2px dashed #999; border-radius: 16px; background: #fff; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; font-size: 14px; color: #555; }
   .links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
@@ -163,7 +163,7 @@
 
 <div class="canvas-wrap">
 <div class="canvas" id="canvas">
-  <div class="frame" style="left:1200px;top:1760px">
+  <div class="frame" style="left:1760px;top:1760px">
     <div class="label">3b. 種目の記録(閲覧モード)。前日以前の記録はこのモードで開く。右上の「編集」で 3 の編集モードに切り替わる</div>
     <div class="phone" id="phoneRecView">
       <div class="status"></div>
@@ -175,9 +175,9 @@
     </div>
   </div>
 
-  <div class="frame" style="left:80px;top:3520px">
+  <div class="frame" style="left:1200px;top:2640px">
     <div class="label">2c. 1 回の記録の削除(左スワイプ)。2 の行を左にスワイプすると「削除」が出る。押すと 2e の確認を出す</div>
-    <div class="phone">
+    <div class="phone" id="phoneSwipe">
       <div class="status"></div>
       <div class="screen active">
         <div class="nav"><button class="back">‹</button><span>デッドリフト</span><span><button>📈</button><button>＋</button><button>⚙︎</button></span></div>
@@ -187,7 +187,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:640px;top:3520px">
+  <div class="frame" style="left:1760px;top:2640px">
     <div class="label">2d. 1 回の記録の削除(長押し)。2 の行を長押しするとメニューが出る。種目のカードの長押しと同じ形</div>
     <div class="phone" id="phoneHold">
       <div class="status"></div>
@@ -200,7 +200,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:1200px;top:3520px">
+  <div class="frame" style="left:2320px;top:2640px">
     <div class="label">2e. 1 回の記録の削除の確認。消える中身を書き、赤字の「記録を削除」で消す</div>
     <div class="phone" id="phoneConfirm">
       <div class="status"></div>
@@ -213,7 +213,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:640px;top:4400px">
+  <div class="frame" style="left:1200px;top:1760px">
     <div class="label">1e. 種目の設定。長押しメニューの「種目の設定」か、2 の右上の ⚙︎ から開く。種目の追加と同じ画面</div>
     <div class="phone" id="phoneExCfg">
       <div class="status"></div>
@@ -231,7 +231,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:1200px;top:4400px">
+  <div class="frame" style="left:2320px;top:0">
     <div class="label">3c. 新しい 1 回の記録(最初に並べるセット数が 3)。空の行は、重さと回数を入れるとセットになる</div>
     <div class="phone" id="phoneNewRec">
       <div class="status"></div>
@@ -243,11 +243,11 @@
     </div>
   </div>
 
-  <div class="frame" style="left:80px;top:4428px">
+  <div class="frame" style="left:80px;top:908px">
     <div class="ph">左上の「‹」は 1 つ前の画面に、「キャンセル」はホームに戻る(矢印は省略)</div>
   </div>
 
-  <div class="frame" style="left:1200px;top:0">
+  <div class="frame" style="left:80px;top:1760px">
     <div class="label">1c. 種目の削除(ホームの上にシートで開く)</div>
     <div class="phone" id="phoneDel">
       <div class="status"></div>
@@ -265,7 +265,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:640px;top:0">
+  <div class="frame" style="left:640px;top:1760px">
     <div class="label">1a. 長押しメニュー(ホームの上に出る)。非表示の種目では「非表示」が「再表示」になる</div>
     <div class="phone" id="phoneMenu">
       <div class="status"></div>
@@ -280,7 +280,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:80px;top:0">
+  <div class="frame" style="left:1200px;top:0">
     <div class="label">1b. 種目の追加(ホームの上にシートで開く)</div>
     <div class="phone" id="phoneAdd">
       <div class="status"></div>
@@ -298,8 +298,8 @@
     </div>
   </div>
 
-  <div class="frame" style="left:80px;top:880px">
-    <div class="label">1. 種目グリッド(ホーム)。一番下の「非表示の種目」はタップで開く</div>
+  <div class="frame" style="left:640px;top:880px">
+    <div class="label">1.種目グリッド(ホーム)。一番下の「非表示の種目」はタップで開く</div>
     <div class="phone" id="phoneHome">
       <div class="status"></div>
       <div class="screen active" id="home">
@@ -314,7 +314,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:640px;top:880px">
+  <div class="frame" style="left:1200px;top:880px">
     <div class="label">2. 種目の履歴</div>
     <div class="phone" id="phoneExHist">
       <div class="status"></div>
@@ -327,8 +327,8 @@
     </div>
   </div>
 
-  <div class="frame" style="left:640px;top:1760px">
-    <div class="label">3. 種目の記録(編集モード)。今日の記録と、＋ で作る新しい記録はこのモードで開く</div>
+  <div class="frame" style="left:1760px;top:880px">
+    <div class="label">3.種目の記録(編集モード)。今日の記録と、＋ で作る新しい記録はこのモードで開く</div>
     <div class="phone" id="phoneRec">
       <div class="status"></div>
       <div class="screen active" id="rec">
@@ -344,7 +344,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:640px;top:2640px">
+  <div class="frame" style="left:2320px;top:880px">
     <div class="label">3a. 日付と時刻の変更(記録の上に出る)。• は記録のある日</div>
     <div class="phone" id="phoneDate">
       <div class="status"></div>
@@ -357,7 +357,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:80px;top:2640px">
+  <div class="frame" style="left:80px;top:0">
     <div class="label">1d. 並べ替え(ホームの中央に出る)。図は「部位」の見方で「頻度(4 週間)：降順」を選んだ状態</div>
     <div class="phone" id="phoneSort">
       <div class="status"></div>
@@ -372,7 +372,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:1200px;top:2640px">
+  <div class="frame" style="left:2880px;top:880px">
     <div class="label">2b. 同じ日に記録が 2 つある場合の種目の履歴。その日の行だけ時刻を出す</div>
     <div class="phone" id="phoneSameDay">
       <div class="status"></div>
@@ -389,7 +389,7 @@
     </div>
   </div>
 
-  <div class="frame" style="left:1200px;top:880px">
+  <div class="frame" style="left:1760px;top:0">
     <div class="label">4. 分析</div>
     <div class="phone" id="phoneAn">
       <div class="status"></div>
@@ -408,7 +408,7 @@
   </div>
 
 
-  <div class="frame" style="left:80px;top:1760px">
+  <div class="frame" style="left:640px;top:0">
     <div class="label">5. 設定</div>
     <div class="phone" id="phoneCfg">
       <div class="status"></div>
@@ -825,19 +825,31 @@ document.querySelectorAll('#anRange button').forEach((b) => b.onclick = () => { 
 $('#anBack').onclick = () => show('#phoneExHist');
 
 /* 画面間の矢印。操作する要素から遷移先の画面へ引く。「‹」の矢印は引かない。
-   out / in は線が出る辺と入る辺(l か r)。省略すると互いに向き合う辺。at は入る位置(画面の高さに対する割合) */
+   out / in は線が出る辺と入る辺(l・r・t・b)。省略すると左右で向き合う辺。at は入る位置(その辺の長さに対する割合)。
+   bend は線の膨らみの最小値で、間の画面を避けて回り込ませるときに大きくする */
 const LINKS = [
-  { from: '#gridWrap .card', to: '#phoneExHist', label: 'カードをタップ' },
-  { from: '#toAdd', to: '#phoneAdd', out: 'r', in: 'r', at: 0.15, label: '＋' },
-  { from: '#gridWrap .grid .card:nth-child(3)', to: '#phoneMenu', out: 'r', in: 'l', at: 0.6, label: '長押し' },
-  { from: '#phoneMenu .danger', to: '#phoneDel', out: 'r', in: 'l', label: '削除' },
-  { from: '#toSort', to: '#phoneSort', out: 'l', in: 'l', at: 0.1, label: '↕' },
-  { from: '#holdMenuDemo .danger', to: '#phoneConfirm', out: 'r', in: 'l', label: '削除' },
-  { from: '#recDate', to: '#phoneDate', out: 'r', in: 'r', at: 0.1, label: '日付をタップ' },
-  { from: '#toCfg', to: '#phoneCfg', out: 'r', in: 'r', at: 0.1, label: '⚙️' },
-  { from: '#toAn', to: '#phoneAn', label: '📈' },
-  { from: '#toToday', to: '#phoneRec', out: 'r', in: 'r', at: 0.08, label: '＋(新しい記録)' },
+  // ホームから
+  { from: '#toSort', to: '#phoneSort', out: 't', in: 'b', label: '↕' },
+  { from: '#toCfg', to: '#phoneCfg', out: 't', in: 'b', label: '⚙️' },
+  { from: '#toAdd', to: '#phoneAdd', out: 't', in: 'b', at: 0.3, label: '＋' },
+  { from: '#gridWrap .card', to: '#phoneExHist', out: 'r', in: 'l', at: 0.3, label: 'カードをタップ' },
+  { from: '#gridWrap .grid .card:nth-child(7)', to: '#phoneMenu', out: 'l', in: 'l', at: 0.6, label: '長押し' },
+  { from: '#phoneMenu .danger', to: '#phoneDel', out: 'l', in: 'r', label: '削除' },
+  { from: '#phoneMenu .sheet button', to: '#phoneExCfg', out: 'r', in: 'l', label: '種目の設定' },
+  // 種目の履歴から
+  { from: '#toAn', to: '#phoneAn', out: 't', in: 'b', at: 0.4, label: '📈' },
+  { from: '#toToday', to: '#phoneNewRec', out: 't', in: 'b', at: 0.3, label: '＋(空の行の数が 3 の種目)' },
+  { from: '#toToday', to: '#phoneRec', out: 'r', in: 'l', at: 0.08, label: '＋(新しい記録)' },
+  { from: '#toExCfg', to: '#phoneExCfg', out: 'r', in: 'r', at: 0.1, label: '⚙︎' },
   { from: '#exHist .hrow:nth-child(2)', to: '#phoneRecView', out: 'r', in: 'l', at: 0.3, label: '行をタップ(前日以前)' },
+  { from: '#exHist .hrow:nth-child(3)', to: '#phoneHold', out: 'r', in: 'l', at: 0.3, label: '行を長押し' },
+  { from: '#exHist .hrow:nth-child(4)', to: '#phoneSwipe', out: 'l', in: 'l', at: 0.3, label: '行を左スワイプ' },
+  { from: '#swipeDemo .swipe-del', to: '#phoneConfirm', out: 'b', in: 'b', bend: 600, label: '削除' },
+  { from: '#holdMenuDemo .danger', to: '#phoneConfirm', out: 'r', in: 'l', label: '削除' },
+  // 種目の記録から
+  { from: '#recDate', to: '#phoneDate', out: 'r', in: 'l', at: 0.1, label: '日付をタップ' },
+  { from: '#dateDemo [data-a="ok"]', to: '#phoneSameDay', out: 'r', in: 'l', label: '完了(同じ日に移すと)' },
+  { from: '#phoneRecView .nav > span:last-child button', to: '#phoneRec', out: 't', in: 'b', label: '編集' },
 ];
 const MARKER = '<defs><marker id="lk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)" stroke="none"/></marker></defs>';
 function drawLinks() {
@@ -847,14 +859,17 @@ function drawLinks() {
     const s = document.querySelector(k.from), t = document.querySelector(k.to);
     if (!s || !t) return '';
     const a = box(s), b = box(t), toRight = b.l > a.r;
-    const out = (k.out || (toRight ? 'r' : 'l')) === 'r' ? 1 : -1, inn = (k.in || (toRight ? 'l' : 'r')) === 'r' ? 1 : -1;
-    const sx = out > 0 ? a.r : a.l, sy = (a.t + a.b) / 2, tx = inn > 0 ? b.r : b.l;
-    // at が無ければ、遷移先の画面の辺のうち、元の要素の高さに近い位置に当てる
-    const ty = k.at ? b.t + (b.b - b.t) * k.at : Math.min(Math.max(sy, b.t + 40), b.b - 40);
-    const d = Math.max(90, Math.abs(tx - sx) / 2);
-    return `<path d="M${sx},${sy} C${sx + out * d},${sy} ${tx + inn * d},${ty} ${tx},${ty}" marker-end="url(#lk)"/>
+    const os = k.out || (toRight ? 'r' : 'l'), is = k.in || (toRight ? 'l' : 'r');
+    const N = { l: [-1, 0], r: [1, 0], t: [0, -1], b: [0, 1] }, [ox, oy] = N[os], [ix, iy] = N[is];
+    const sx = ox ? (ox > 0 ? a.r : a.l) : (a.l + a.r) / 2, sy = oy ? (oy > 0 ? a.b : a.t) : (a.t + a.b) / 2;
+    // at が無ければ、遷移先の画面の辺のうち、元の要素に近い位置に当てる
+    const along = (lo, hi, near) => k.at ? lo + (hi - lo) * k.at : Math.min(Math.max(near, lo + 40), hi - 40);
+    const tx = ix ? (ix > 0 ? b.r : b.l) : along(b.l, b.r, sx), ty = iy ? (iy > 0 ? b.b : b.t) : along(b.t, b.b, sy);
+    const d = (horiz) => Math.max(k.bend || 90,Math.abs(horiz ? tx - sx : ty - sy) / 2), od = d(ox), id = d(ix);
+    const lx = ix ? tx + ix * 10 : tx + 6, ly = iy ? ty + (iy > 0 ? 20 : -10) : ty - 10;
+    return `<path d="M${sx},${sy} C${sx + ox * od},${sy + oy * od} ${tx + ix * id},${ty + iy * id} ${tx},${ty}" marker-end="url(#lk)"/>
       <circle cx="${sx}" cy="${sy}" r="4"/>
-      <text x="${tx + inn * 10}" y="${ty - 10}" text-anchor="${inn > 0 ? 'start' : 'end'}">${k.label}</text>`;
+      <text x="${lx}" y="${ly}" text-anchor="${ix < 0 ? 'end' : 'start'}">${k.label}</text>`;
   }).join('');
 }
 new MutationObserver((ms) => { if (ms.some((m) => !$('#links').contains(m.target))) drawLinks(); })
