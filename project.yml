@@ -27,3 +27,17 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
+    scheme:
+      testTargets:
+        - WorkoutLogTests
+  WorkoutLogTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - WorkoutLogTests
+    dependencies:
+      - target: WorkoutLog
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
