@@ -22,7 +22,9 @@ struct ExerciseFormView: View {
                                 exercise.part = part
                             } label: {
                                 HStack(spacing: 8) {
+                                    // 横に部位の名前を出すので、アイコンの名前は読み上げない
                                     PartIcon(part: part)
+                                        .accessibilityHidden(true)
                                     Text(part.label)
                                     Spacer(minLength: 0)
                                 }

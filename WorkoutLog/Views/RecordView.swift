@@ -98,7 +98,7 @@ struct RecordView: View {
             }
             Section("メモ") {
                 if isEditing {
-                    TextField("", text: $memo, axis: .vertical)
+                    TextField("メモ", text: $memo, axis: .vertical)
                         .onChange(of: memo) { saveMemo() }
                 } else {
                     Text(memo)

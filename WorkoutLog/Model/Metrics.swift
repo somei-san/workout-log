@@ -31,6 +31,12 @@ enum Format {
         value.map { String(format: "%.1f", $0) } ?? "–"
     }
 
+    /// ボリューム。小数 1 桁で、整数なら小数点を付けない(1300、1312.5)
+    static func volume(_ value: Double) -> String {
+        let rounded = (value * 10).rounded() / 10
+        return rounded == rounded.rounded() ? String(format: "%.0f", rounded) : String(format: "%.1f", rounded)
+    }
+
     static func sets(_ sets: [WorkoutSet]) -> String {
         sets.map { "\(weight($0.weight))kg×\($0.reps)" }.joined(separator: " / ")
     }

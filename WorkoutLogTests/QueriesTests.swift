@@ -47,6 +47,11 @@ struct QueriesTests {
         #expect(day.start(ofLastMonths: months).sqlString == start)
     }
 
+    @Test(arguments: [(1025.0, "1025"), (1312.5, "1312.5"), (1312.25, "1312.3"), (999.96, "1000")])
+    func ボリュームは整数なら小数点を付けない(value: Double, text: String) {
+        #expect(Format.volume(value) == text)
+    }
+
     @Test func CSVは1セット1行で_カンマを含む値をダブルクォートで囲む() throws {
         let csv = try database.writer.write { db in
             var exercise = Exercise(name: "ベンチプレス", part: .chest)

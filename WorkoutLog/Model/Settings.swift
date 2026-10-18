@@ -50,7 +50,7 @@ enum HistoryColumn: String, CaseIterable, Sendable {
 
     func value(_ summary: RecordSummary) -> String {
         switch self {
-        case .volume: Format.decimal(summary.volume)
+        case .volume: Format.volume(summary.volume)
         case .estimated1RM: Format.decimal(summary.estimated1RM)
         case .maxWeight: Format.decimal(summary.maxWeight)
         case .topSet: summary.topSet.map { "\(Format.weight($0.weight))×\($0.reps)" } ?? "–"
