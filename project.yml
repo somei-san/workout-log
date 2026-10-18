@@ -30,6 +30,18 @@ targets:
     scheme:
       testTargets:
         - WorkoutLogTests
+        - WorkoutLogUITests
+  WorkoutLogUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - WorkoutLogUITests
+    dependencies:
+      - target: WorkoutLog
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
   WorkoutLogTests:
     type: bundle.unit-test
     platform: iOS
