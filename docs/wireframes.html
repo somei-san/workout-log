@@ -32,7 +32,7 @@
   .card { border: 0; background: #f4f4f7; border-radius: 6px; padding: 5px 6px; text-align: left; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 6px; }
   .card .ico { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--pc); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
   .card .txt { min-width: 0; flex: 1; }
-  .card .name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .name { font-size: 12px; font-weight: 600; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   .card .meta { font-size: 11px; color: #555; margin-top: 2px; }
   .card .days { font-size: 14px; font-weight: 700; color: var(--red); }
   .card.off { opacity: .55; }
