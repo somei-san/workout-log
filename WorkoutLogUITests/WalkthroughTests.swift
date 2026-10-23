@@ -39,6 +39,8 @@ final class WalkthroughTests: XCTestCase {
         tap(button("種目を追加"), "種目を追加")
         let field = app.textFields["例: ベンチプレス"]
         tap(field, "名前")
+        // 起動直後のシミュレーターは、キーボードが出るまでに時間がかかる
+        _ = app.keyboards.firstMatch.waitForExistence(timeout: 10)
         field.typeText(name)
         tap(button(part), part)
         shot("02-種目の追加-\(name)")
