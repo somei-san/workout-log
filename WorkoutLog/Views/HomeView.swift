@@ -204,7 +204,7 @@ private struct ExerciseCardView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(card.exercise.name)
                     .font(.subheadline.bold())
-                    .lineLimit(1)
+                    .lineLimit(2)
                 Text(subtitle)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -213,7 +213,8 @@ private struct ExerciseCardView: View {
             Spacer(minLength: 0)
         }
         .padding(6)
-        .frame(minHeight: 48)
+        // グリッドは行の高さを一番高いカードに合わせるだけなので、背景を行の高さまで伸ばす
+        .frame(minHeight: 48, maxHeight: .infinity)
         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 6))
         .contentShape(.rect)
     }
