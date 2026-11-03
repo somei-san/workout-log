@@ -25,12 +25,12 @@ struct HomeView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                let visible = sorted(cards.filter { !$0.exercise.isHidden })
+                let visible = rule.sorted(cards.filter { !$0.exercise.isHidden }, today: today)
                 switch mode {
                 case .all:
                     grid(visible)
                 case .part:
-                    ForEach(partOrder(visible), id: \.self) { part in
+                    ForEach(rule.partOrder(visible), id: \.self) { part in
                         let group = visible.filter { $0.exercise.part == part }
                         if !group.isEmpty {
                             Text(part.label)
@@ -43,7 +43,7 @@ struct HomeView: View {
                         }
                     }
                 }
-                let hidden = sorted(cards.filter(\.exercise.isHidden))
+                let hidden = rule.sorted(cards.filter(\.exercise.isHidden), today: today)
                 if !hidden.isEmpty {
                     DisclosureGroup("非表示の種目(\(hidden.count))", isExpanded: $showsHidden) {
                         grid(hidden)
@@ -163,35 +163,6 @@ struct HomeView: View {
     }
 
     private var rule: SortRule { mode == .all ? sortAll : sortPart }
-
-    /// 今の見方の並べ方で並べる。未実施の種目は、経過日数がいちばん大きく、頻度が 0 として扱う。
-    /// 値が同じなら経過日数の大きい順、それも同じなら名前の順
-    private func sorted(_ cards: [ExerciseCard]) -> [ExerciseCard] {
-        let rule = rule
-        return cards.sorted { a, b in
-            let ea = a.elapsedDays(today: today) ?? .max, eb = b.elapsedDays(today: today) ?? .max
-            if !rule.isElapsed, a.frequency(rule) != b.frequency(rule) {
-                return rule.isDescending ? a.frequency(rule) > b.frequency(rule) : a.frequency(rule) < b.frequency(rule)
-            }
-            if rule.isElapsed, !rule.isDescending, ea != eb {
-                return ea < eb
-            }
-            return ea != eb ? ea > eb : a.exercise.name < b.exercise.name
-        }
-    }
-
-    /// 部位の見方の区切りの順。経過日数なら胸、肩、…、その他の順。
-    /// 頻度なら、その部位の表示中の種目の頻度の合計で、選んだ向きに並べる。合計が同じなら胸、肩、…の順
-    private func partOrder(_ visible: [ExerciseCard]) -> [Part] {
-        let rule = rule
-        guard !rule.isElapsed else { return Part.allCases }
-        let total = Dictionary(grouping: visible, by: \.exercise.part).mapValues { $0.reduce(0) { $0 + $1.frequency(rule) } }
-        return Part.allCases.enumerated().sorted { a, b in
-            let ta = total[a.element] ?? 0, tb = total[b.element] ?? 0
-            if ta != tb { return rule.isDescending ? ta > tb : ta < tb }
-            return a.offset < b.offset
-        }.map(\.element)
-    }
 }
 
 private struct ExerciseCardView: View {

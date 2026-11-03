@@ -44,6 +44,13 @@ enum HistoryColumn: String, CaseIterable, Sendable {
         return columns.isEmpty ? defaults : columns
     }
 
+    /// column の表示と非表示を切り替えた後の表示項目。最後の 1 つは非表示にできないので、すべて非表示になるなら nil
+    static func toggled(_ columns: Set<HistoryColumn>, _ column: HistoryColumn, isOn: Bool) -> Set<HistoryColumn>? {
+        var columns = columns
+        if isOn { columns.insert(column) } else { columns.remove(column) }
+        return columns.isEmpty ? nil : columns
+    }
+
     static func encode(_ columns: Set<HistoryColumn>) -> String {
         allCases.filter(columns.contains).map(\.rawValue).joined(separator: ",")
     }

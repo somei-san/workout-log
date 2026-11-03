@@ -21,6 +21,40 @@ struct RecordView: View {
         var weightValue: Double? { Double(weight).flatMap { $0 >= 0 ? $0 : nil } }
         var repsValue: Int? { Int(reps).flatMap { $0 > 0 ? $0 : nil } }
         var isFilled: Bool { weightValue != nil && repsValue != nil }
+        /// 1〜10 の外は未入力として扱う
+        var rpeValue: Double? { Double(rpe).flatMap { (1...10).contains($0) ? $0 : nil } }
+        /// 0 より小さい値は未入力として扱う
+        var rirValue: Int? { Int(rir).flatMap { $0 >= 0 ? $0 : nil } }
+
+        /// 「＋」で足す行。直前のセットの重さと回数を入れる。セットが無ければ前回の 1 セット目、前回も無ければ空の行。
+        /// 強度は引き継がない
+        static func next(after rows: [SetRow], previous: [WorkoutSet]?) -> SetRow {
+            var row = SetRow()
+            if let last = rows.last(where: \.isFilled) {
+                row.weight = last.weight
+                row.reps = last.reps
+            } else if let first = previous?.first {
+                row.weight = Format.weight(first.weight)
+                row.reps = String(first.reps)
+            }
+            return row
+        }
+
+        /// i 行目を消すと 1 回の記録ごと消えるか。保存したセットが、その行だけのとき
+        static func deletesRecord(_ rows: [SetRow], at i: Int) -> Bool {
+            rows[i].saved != nil && rows.filter { $0.saved != nil }.count == 1
+        }
+
+        /// 行を消した後の、残りのセット。順番を画面の行の順に詰め直す。後で足すセットと順番が重ならないようにするため
+        static func renumbered(_ remaining: [SetRow]) -> [WorkoutSet] {
+            remaining.enumerated().compactMap { index, row in
+                row.saved.map { set -> WorkoutSet in
+                    var set = set
+                    set.position = index
+                    return set
+                }
+            }
+        }
     }
 
     private enum Field: Hashable {
@@ -294,7 +328,7 @@ struct RecordView: View {
             exercise = loaded.exercise
             record = loaded.record
             memo = loaded.record?.memo ?? ""
-            isPast = loaded.record.map { $0.day < LocalDay.today() } ?? false
+            isPast = loaded.record?.isPast(today: .today()) ?? false
             isEditing = !isPast
             rows = loaded.record == nil
                 ? (0..<loaded.exercise.initialRowCount).map { _ in SetRow() }
@@ -330,16 +364,8 @@ struct RecordView: View {
 
     // MARK: - 編集
 
-    /// 「＋」で足す行には、直前のセットの値を入れる。セットが無ければ前回の 1 セット目、前回も無ければ空の行
     private func addRow() {
-        var row = SetRow()
-        if let last = rows.last(where: \.isFilled) {
-            row.weight = last.weight
-            row.reps = last.reps
-        } else if let first = previousSets?.first {
-            row.weight = Format.weight(first.weight)
-            row.reps = String(first.reps)
-        }
+        let row = SetRow.next(after: rows, previous: previousSets)
         rows.append(row)
         if row.isFilled {
             persist(rows.count - 1)
@@ -371,9 +397,7 @@ struct RecordView: View {
         let row = rows[i]
         guard let weight = row.weightValue, let reps = row.repsValue, let exerciseId = exercise?.id else { return }
         let record = record, memo = memo, performedAt = chosenAt ?? Date()
-        // RPE は 1〜10、RIR は 0 以上。範囲の外は未入力として扱う
-        let rpe = Double(row.rpe).flatMap { (1...10).contains($0) ? $0 : nil }
-        let rir = Int(row.rir).flatMap { $0 >= 0 ? $0 : nil }
+        let rpe = row.rpeValue, rir = row.rirValue
         do {
             let (savedRecord, savedSet) = try database.writer.write { db in
                 var record = record ?? WorkoutRecord(exerciseId: exerciseId, performedAt: performedAt, memo: memo)
@@ -414,21 +438,14 @@ struct RecordView: View {
     private func deleteRow(_ rowId: UUID) {
         guard let i = rows.firstIndex(where: { $0.id == rowId }) else { return }
         focus = nil
-        if rows[i].saved != nil, rows.filter({ $0.saved != nil }).count == 1 {
+        if SetRow.deletesRecord(rows, at: i) {
             isConfirmingRecordDelete = true
             return
         }
         var remaining = rows
         remaining.remove(at: i)
         let deleted = rows[i].saved
-        // 残りのセットの順番を、画面の行の順に詰め直す。後で足すセットと順番が重ならないようにするため
-        let renumbered = remaining.enumerated().compactMap { index, row in
-            row.saved.map { set -> WorkoutSet in
-                var set = set
-                set.position = index
-                return set
-            }
-        }
+        let renumbered = SetRow.renumbered(remaining)
         do {
             try database.writer.write { db in
                 if let deleted {

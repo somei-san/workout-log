@@ -153,8 +153,12 @@ struct AnalysisView: View {
         }
     }
 
-    /// 期間の中の点。移動平均は、期間より前の記録も含めた直近 5 回で求める
     private var points: [Point] {
+        Self.points(summaries, metric: metric, range: range, display: display, today: .today())
+    }
+
+    /// 期間の中の点。summaries は古い順。移動平均は、期間より前の記録も含めた直近 5 回で求める
+    nonisolated static func points(_ summaries: [RecordSummary], metric: Metric, range: Range, display: Display, today: LocalDay) -> [Point] {
         let values = summaries.map { metric.value($0) ?? 0 }
         let all = summaries.indices.map { i in
             let value = switch display {
@@ -164,7 +168,7 @@ struct AnalysisView: View {
             return Point(summary: summaries[i], value: value)
         }
         guard range != .all else { return all }
-        let since = LocalDay.today().start(ofLastMonths: range.rawValue)
+        let since = today.start(ofLastMonths: range.rawValue)
         return all.filter { $0.summary.record.day >= since }
     }
 

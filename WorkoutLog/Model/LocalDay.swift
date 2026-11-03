@@ -62,6 +62,11 @@ extension WorkoutRecord {
 
     var day: LocalDay { LocalDay(performedAt: performedAt, utcOffset: utcOffset) }
 
+    /// 前日以前の記録か
+    func isPast(today: LocalDay) -> Bool {
+        day < today
+    }
+
     /// 同じ日に別の 1 回の記録があるか。あれば日付に時刻も出す
     func sharesDay(with records: [WorkoutRecord]) -> Bool {
         records.contains { $0.id != id && $0.exerciseId == exerciseId && $0.day == day }

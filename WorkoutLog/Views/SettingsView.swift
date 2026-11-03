@@ -45,9 +45,7 @@ struct SettingsView: View {
         Binding {
             columns.contains(column)
         } set: { isOn in
-            var columns = columns
-            if isOn { columns.insert(column) } else { columns.remove(column) }
-            if !columns.isEmpty {
+            if let columns = HistoryColumn.toggled(columns, column, isOn: isOn) {
                 columnsRaw = HistoryColumn.encode(columns)
             }
         }
