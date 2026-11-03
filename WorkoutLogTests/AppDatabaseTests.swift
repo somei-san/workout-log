@@ -26,6 +26,71 @@ struct AppDatabaseTests {
         }
     }
 
+    @Test func 記録を消すとセットも消え_同じ種目のほかの記録は残る() throws {
+        try database.writer.write { db in
+            var exercise = Exercise(name: "デッドリフト", part: .back)
+            try exercise.insert(db)
+            var kept = WorkoutRecord(exerciseId: exercise.id!, performedAt: Date())
+            try kept.insert(db)
+            var keptSet = WorkoutSet(recordId: kept.id!, position: 0, weight: 135, reps: 5)
+            try keptSet.insert(db)
+            var deleted = WorkoutRecord(exerciseId: exercise.id!, performedAt: Date())
+            try deleted.insert(db)
+            var deletedSet = WorkoutSet(recordId: deleted.id!, position: 0, weight: 140, reps: 3)
+            try deletedSet.insert(db)
+
+            _ = try deleted.delete(db)
+
+            #expect(try WorkoutRecord.fetchAll(db).map(\.id) == [kept.id])
+            #expect(try WorkoutSet.fetchAll(db).map(\.id) == [keptSet.id])
+            #expect(try Exercise.fetchCount(db) == 1)
+        }
+    }
+
+    @Test(arguments: [(-1, false), (0, true), (10, true), (11, false)])
+    func 最初に並べるセット数は0から10だけ保存できる(count: Int, saves: Bool) throws {
+        try database.writer.write { db in
+            var exercise = Exercise(name: "デッドリフト", part: .back, initialRowCount: count)
+            if saves {
+                try exercise.insert(db)
+            } else {
+                #expect(throws: DatabaseError.self) { try exercise.insert(db) }
+            }
+        }
+    }
+
+    @Test func 種目の1回の記録は新しい順で_同じ時刻なら後に作った記録が先() throws {
+        let ids = try database.writer.write { db in
+            var exercise = Exercise(name: "デッドリフト", part: .back)
+            try exercise.insert(db)
+            var ids: [Int64] = []
+            for utc in ["2026-10-14T00:00:00Z", "2026-10-10T00:00:00Z", "2026-10-14T00:00:00Z"] {
+                var record = WorkoutRecord(exerciseId: exercise.id!, performedAt: try Date(utc, strategy: .iso8601))
+                try record.insert(db)
+                ids.append(record.id!)
+            }
+            return (ids, try RecordSummary.fetchAll(db, exerciseId: exercise.id!).map(\.record.id!))
+        }
+        #expect(ids.1 == [ids.0[2], ids.0[0], ids.0[1]])
+    }
+
+    @Test func 種目の無い記録と記録の無いセットは保存できない() throws {
+        try database.writer.write { db in
+            var record = WorkoutRecord(exerciseId: 999, performedAt: Date())
+            #expect(throws: DatabaseError.self) { try record.insert(db) }
+            var set = WorkoutSet(recordId: 999, position: 0, weight: 100, reps: 5)
+            #expect(throws: DatabaseError.self) { try set.insert(db) }
+        }
+    }
+
+    @Test func 記録は作った時点の時差を夏時間も含めて持つ() throws {
+        let newYork = TimeZone(identifier: "America/New_York")!
+        let summer = WorkoutRecord(exerciseId: 0, performedAt: try Date("2026-07-01T12:00:00Z", strategy: .iso8601), timeZone: newYork)
+        let winter = WorkoutRecord(exerciseId: 0, performedAt: try Date("2026-12-01T12:00:00Z", strategy: .iso8601), timeZone: newYork)
+        #expect(summer.utcOffset == -240)
+        #expect(winter.utcOffset == -300)
+    }
+
     @Test(arguments: [
         ("2026-10-16T22:30:00Z", "Asia/Tokyo", "2026-10-17"),
         ("2026-10-17T02:00:00Z", "America/New_York", "2026-10-16"),

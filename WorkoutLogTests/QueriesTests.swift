@@ -82,4 +82,33 @@ struct QueriesTests {
 
             """)
     }
+
+    @Test func CSVは記録を日付と時刻の順に並べ_ダブルクォートと改行を含む値も囲む() throws {
+        let csv = try database.writer.write { db in
+            let tokyo = TimeZone(identifier: "Asia/Tokyo")!
+            var squat = Exercise(name: "スクワット", part: .leg)
+            try squat.insert(db)
+            var bench = Exercise(name: "ベンチ\"ワイド\"", part: .chest)
+            try bench.insert(db)
+            var later = WorkoutRecord(exerciseId: squat.id!, performedAt: try date("2026-10-18T00:00:00Z"), timeZone: tokyo)
+            try later.insert(db)
+            var laterSet = WorkoutSet(recordId: later.id!, position: 0, weight: 140, reps: 3, rir: 1)
+            try laterSet.insert(db)
+            var earlier = WorkoutRecord(exerciseId: bench.id!, performedAt: try date("2026-10-17T00:00:00Z"), timeZone: tokyo, memo: "1行目\n2行目")
+            try earlier.insert(db)
+            var earlierSet = WorkoutSet(recordId: earlier.id!, position: 0, weight: 100, reps: 5)
+            try earlierSet.insert(db)
+            return try CSVExport.make(db)
+        }
+        #expect(csv == [
+            "種目,部位,日付,時刻,セット,重さ(kg),回数,RPE,RIR,メモ",
+            "\"ベンチ\"\"ワイド\"\"\",胸,2026/10/17,09:00,1,100,5,,,\"1行目\n2行目\"",
+            "スクワット,足,2026/10/18,09:00,1,140,3,,1,",
+        ].map { $0 + "\r\n" }.joined())
+    }
+
+    @Test func 記録が無ければCSVは見出しの行だけ() throws {
+        let csv = try database.reader.read(CSVExport.make)
+        #expect(csv == "種目,部位,日付,時刻,セット,重さ(kg),回数,RPE,RIR,メモ\r\n")
+    }
 }
