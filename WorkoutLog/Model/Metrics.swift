@@ -37,8 +37,19 @@ enum Format {
         return rounded == rounded.rounded() ? String(format: "%.0f", rounded) : String(format: "%.1f", rounded)
     }
 
+    /// セットの並びを「135kg×5 / 125kg×5×2」の形の文字列にする。
+    /// 続けて並んだ同じ重さと回数のセットは、セット数を付けて 1 つにまとめる。間に別のセットがあるときはまとめない。
+    /// 重さと回数の推移を、並んだ順に残すため
     static func sets(_ sets: [WorkoutSet]) -> String {
-        sets.map { "\(weight($0.weight))kg×\($0.reps)" }.joined(separator: " / ")
+        var groups: [(weight: Double, reps: Int, count: Int)] = []
+        for set in sets {
+            if let last = groups.last, last.weight == set.weight, last.reps == set.reps {
+                groups[groups.count - 1].count += 1
+            } else {
+                groups.append((set.weight, set.reps, 1))
+            }
+        }
+        return groups.map { "\(weight($0.weight))kg×\($0.reps)" + ($0.count > 1 ? "×\($0.count)" : "") }.joined(separator: " / ")
     }
 
     static func date(_ date: Date, timeZone: TimeZone, weekday: Bool = false, time: Bool = false) -> String {

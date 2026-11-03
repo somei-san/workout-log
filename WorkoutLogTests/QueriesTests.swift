@@ -52,6 +52,16 @@ struct QueriesTests {
         #expect(Format.volume(value) == text)
     }
 
+    @Test func セットの並びは続けて並んだ同じ重さと回数のセットをセット数でまとめる_間に別のセットがあるか回数が違うときはまとめない() {
+        func sets(_ values: [(Double, Int)]) -> [WorkoutSet] {
+            values.enumerated().map { WorkoutSet(recordId: 0, position: $0.offset, weight: $0.element.0, reps: $0.element.1) }
+        }
+        #expect(Format.sets(sets([(102.5, 5), (102.5, 5), (100, 6), (100, 6), (97.5, 7)])) == "102.5kg×5×2 / 100kg×6×2 / 97.5kg×7")
+        #expect(Format.sets(sets([(100, 6), (90, 8), (100, 6)])) == "100kg×6 / 90kg×8 / 100kg×6")
+        #expect(Format.sets(sets([(100, 6), (100, 5)])) == "100kg×6 / 100kg×5")
+        #expect(Format.sets([]) == "")
+    }
+
     @Test func CSVは1セット1行で_カンマを含む値をダブルクォートで囲む() throws {
         let csv = try database.writer.write { db in
             var exercise = Exercise(name: "ベンチプレス", part: .chest)
