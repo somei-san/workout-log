@@ -237,7 +237,7 @@
       <div class="status"></div>
       <div class="screen active">
         <div class="nav"><button class="back">‹</button><span class="ttl"><span>デッドリフト</span><button><span>2026/10/17(土) ▾</span></button></span><span></span></div>
-        <div class="prev">前回  135kg×5 / 125kg×5</div>
+        <div class="prev">前回  135kg×5 / 125kg×5×2</div>
         <div class="scroll" id="newRecDemo"></div>
       </div>
     </div>
@@ -333,7 +333,7 @@
       <div class="status"></div>
       <div class="screen active" id="rec">
         <div class="nav"><button class="back" aria-label="戻る" id="back">‹</button><span class="ttl"><span id="recTitle">デッドリフト</span><button id="recDate" aria-label="日付と時刻を変える"><span></span></button></span><span><button id="recEdit"></button></span></div>
-        <div class="prev" id="prev">前回  135kg×5 / 125kg×5</div>
+        <div class="prev" id="prev">前回  135kg×5 / 125kg×5×2</div>
         <div class="scroll" id="sets"></div>
         <div class="pad" id="pad">
           <div class="adj"><button data-d="-2.5">−2.5</button><button data-d="2.5">＋2.5</button><button data-d="-1">−1</button><button data-d="1">＋1</button></div>
@@ -350,7 +350,7 @@
       <div class="status"></div>
       <div class="screen active">
         <div class="nav"><button class="back">‹</button><span class="ttl"><span>デッドリフト</span><button><span>2026/10/17(土) ▾</span></button></span><span></span></div>
-        <div class="prev">前回  135kg×5 / 125kg×5</div>
+        <div class="prev">前回  135kg×5 / 125kg×5×2</div>
         <div class="scroll"></div>
         <div class="menu open" id="dateDemo"></div>
       </div>
@@ -381,7 +381,7 @@
         <div class="colhead">ボリューム / 推定 1RM / 最大重量(kg)</div>
         <div class="scroll">
           <button class="hrow"><span class="v">675 / 151.9 / 135.0</span><span class="dt">2026/10/14 18:30</span><span class="chev">›</span></button>
-          <button class="hrow"><span class="v">625 / 140.6 / 125.0</span><span class="dt">2026/10/14 09:12</span><span class="chev">›</span></button>
+          <button class="hrow"><span class="v">1250 / 140.6 / 125.0</span><span class="dt">2026/10/14 09:12</span><span class="chev">›</span></button>
           <button class="hrow"><span class="v">1192.5 / 149.1 / 132.5</span><span aria-label="メモあり">📝</span><span class="dt">2026/10/10</span><span class="chev">›</span></button>
           <button class="hrow"><span class="v">1170 / 146.3 / 130.0</span><span class="dt">2026/10/06</span><span class="chev">›</span></button>
         </div>
@@ -443,7 +443,7 @@ const PART = {
 // f4 / f12 は直近 4 週間 / 3 か月の 1 回の記録の数(頻度)
 const EX = [
   { n: 'ラットプルダウン', p: 'back', d: '10/14', days: 3, f4: 6, f12: 20, prev: [[60, 10], [60, 8]] },
-  { n: 'デッドリフト',     p: 'back', d: '10/14', days: 3, f4: 7, f12: 22, defSets: 3, prev: [[135, 5], [125, 5]] },
+  { n: 'デッドリフト',     p: 'back', d: '10/14', days: 3, f4: 7, f12: 22, defSets: 3, prev: [[135, 5], [125, 5], [125, 5]] },
   { n: 'ベンチプレス',     p: 'chest', d: '10/14', days: 3, f4: 8, f12: 24, prev: [[80, 8], [80, 7]] },
   { n: 'ルーマニアンデッド', p: 'back', d: '10/10', days: 7, f4: 4, f12: 12, prev: [[100, 8], [100, 8]] },
   { n: 'レッグプレス',     p: 'legs', d: '10/10', days: 7, f4: 4, f12: 11, prev: [[180, 10], [180, 10]] },
@@ -586,6 +586,12 @@ $('#addOk').onclick = () => {
 /* 種目の履歴 */
 let cur = null, sets = [], dayMemo = '', focus = null, buf = '';
 const e1rm = (w, r) => (w * 36 / (37 - r)).toFixed(1);
+// セットの並び。続けて並んだ同じ重さと回数のセットは、セット数を付けて 1 つにまとめる(125kg×5×2)
+const setsText = (s) => s.reduce((g, [w, r]) => {
+  const last = g[g.length - 1];
+  if (last && last.w === w && last.r === r) last.n++; else g.push({ w, r, n: 1 });
+  return g;
+}, []).map(({ w, r, n }) => `${w}kg×${r}${n > 1 ? `×${n}` : ''}`).join(' / ');
 // ダミーの実施日。最終実施日から 4 日おきにさかのぼる
 const exDays = (e) => {
   if (!e.prev.length) return []; // 追加したばかりの種目
@@ -698,7 +704,7 @@ function openRec(i, init = [], memo = '', date = TODAY) {
   $('#recTitle').textContent = cur.n;
   recDate = date; editing = date >= TODAY;
   renderRecNav();
-  $('#prev').textContent = '前回  ' + (cur.prev.map(([w, r]) => `${w}kg×${r}`).join(' / ') || 'なし');
+  $('#prev').textContent = '前回  ' + (setsText(cur.prev) || 'なし');
   dayMemo = memo;
   // 新しい記録は、種目の設定の「最初に並べるセット数」だけ空の行を並べて開く
   sets = init.length ? init.map(([w, r]) => ({ w, r, rpe: '' }))
@@ -817,7 +823,7 @@ function renderAn() {
   const lo = Math.min(...d), hi = Math.max(...d), x = (i) => pad + i * (W - 2 * pad) / (d.length - 1), y = (v) => H - pad - (v - lo) / (hi - lo || 1) * (H - 2 * pad);
   $('#chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}"><polyline fill="none" stroke="var(--accent)" stroke-width="2" points="${d.map((v, i) => `${x(i)},${y(v)}`).join(' ')}"/><text x="${pad}" y="12" font-size="10" fill="#777">${hi}</text><text x="${pad}" y="${H - 4}" font-size="10" fill="#777">${lo}</text></svg>`;
   $('#legend').innerHTML = anView === 'ma' ? `<span>直近 ${MA_N} 回の実施の平均</span>` : '';
-  $('#anList').innerHTML = exDays(e).slice(0, 2).map((x) => [x.date.slice(5), x.sets]).map(([dt, s]) => `<div class="row-sub"><span>${dt}</span><span>${s.map(([w, r]) => `${w}×${r}`).join(' / ')}</span></div>`).join('');
+  $('#anList').innerHTML = exDays(e).slice(0, 2).map((x) => [x.date.slice(5), x.sets]).map(([dt, s]) => `<div class="row-sub"><span>${dt}</span><span>${setsText(s)}</span></div>`).join('');
 }
 document.querySelectorAll('#anView button').forEach((b) => b.onclick = () => { anView = b.dataset.v; document.querySelectorAll('#anView button').forEach((x) => x.classList.toggle('on', x === b)); renderAn(); });
 document.querySelectorAll('#anMetric button').forEach((b) => b.onclick = () => { anMetric = b.dataset.m; document.querySelectorAll('#anMetric button').forEach((x) => x.classList.toggle('on', x === b)); renderAn(); });
@@ -903,7 +909,7 @@ $('#holdMenuDemo').innerHTML = recMenuHtml(delDays[1]);
 $('#confirmMenuDemo').innerHTML = recDelHtml(delDays[1]);
 // 閲覧モードの図は、デッドリフトの 10/10 の記録(メモつき)。前回は 1 つ前の 10/06 の記録
 const viewDays = exDays(EX[1]);
-$('#viewPrev').textContent = '前回  ' + viewDays[2].sets.map(([w, r]) => `${w}kg×${r}`).join(' / ');
+$('#viewPrev').textContent = '前回  ' + setsText(viewDays[2].sets);
 $('#viewSets').innerHTML = setsViewHtml(viewDays[1].sets.map(([w, r], k) => ({ w, r, rpe: k ? '9' : '8' })), viewDays[1].memo);
 </script>
 </body>
