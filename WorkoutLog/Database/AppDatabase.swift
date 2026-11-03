@@ -53,6 +53,11 @@ extension AppDatabase {
 
     private static func makeShared() -> AppDatabase {
         do {
+            // UI テストは、起動のたびに空のデータベースから始める。UI テストの各回を同じ条件で始めるためと、
+            // 実際の記録が入ったシミュレーターで回しても記録を書き換えないため
+            if ProcessInfo.processInfo.arguments.contains("-uiTesting") {
+                return try empty()
+            }
             let dir = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             return try AppDatabase(DatabasePool(path: dir.appendingPathComponent("db.sqlite").path))
         } catch {

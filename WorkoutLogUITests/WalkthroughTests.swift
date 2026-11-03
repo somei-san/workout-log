@@ -7,6 +7,8 @@ final class WalkthroughTests: XCTestCase {
 
     override func setUp() {
         continueAfterFailure = true
+        // アプリを空の状態で起動する
+        app.launchArguments = ["-uiTesting"]
     }
 
     private func shot(_ name: String) {
