@@ -1,0 +1,76 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# PR は最新の push の結果だけ見ればよいので、前の実行を止める。
+# main は push ごとに結果を残したいので、実行ごとに別のグループにして、待っている実行も取り消させない
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Xcode のプロジェクトを作る
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      # ランナーに入っている iOS 27.0 のシミュレーターを使う
+      - name: シミュレーターを起動する
+        run: |
+          udid=$(xcrun simctl list devices available -j \
+            | jq -r '.devices["com.apple.CoreSimulator.SimRuntime.iOS-27-0"][] | select(.name == "iPhone 17") | .udid')
+          echo "SIMULATOR_ID=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+
+      - name: ビルドする
+        run: >
+          xcodebuild build-for-testing
+          -project WorkoutLog.xcodeproj -scheme WorkoutLog
+          -destination "id=$SIMULATOR_ID" -derivedDataPath build
+
+      # 手元の iOS 27.2 のシミュレーターでは、起動した直後に UI テストのアプリの起動が数分止まって
+      # 失敗することがあった。その備えに、先に一度アプリを起動しておく
+      - name: アプリを一度起動しておく
+        run: |
+          xcrun simctl install "$SIMULATOR_ID" build/Build/Products/Debug-iphonesimulator/WorkoutLog.app
+          xcrun simctl launch "$SIMULATOR_ID" io.github.somei-san.WorkoutLog
+          sleep 10
+          xcrun simctl terminate "$SIMULATOR_ID" io.github.somei-san.WorkoutLog
+
+      - name: 単体テスト
+        run: >
+          xcodebuild test-without-building
+          -project WorkoutLog.xcodeproj -scheme WorkoutLog
+          -destination "id=$SIMULATOR_ID" -derivedDataPath build
+          -only-testing:WorkoutLogTests
+          -resultBundlePath results/unit.xcresult
+
+      # 失敗したテストを 1 回だけ回し直す。アプリの起動が止まって落ちたときの備え
+      - name: UI テスト
+        if: ${{ !cancelled() }}
+        run: >
+          xcodebuild test-without-building
+          -project WorkoutLog.xcodeproj -scheme WorkoutLog
+          -destination "id=$SIMULATOR_ID" -derivedDataPath build
+          -only-testing:WorkoutLogUITests
+          -retry-tests-on-failure -test-iterations 2
+          -resultBundlePath results/ui.xcresult
+
+      - name: テスト結果を残す
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcresult
+          path: results/
