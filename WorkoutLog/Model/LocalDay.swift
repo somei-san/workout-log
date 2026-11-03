@@ -62,6 +62,14 @@ extension WorkoutRecord {
 
     var day: LocalDay { LocalDay(performedAt: performedAt, utcOffset: utcOffset) }
 
+    /// 日付と時刻を date に変えた記録。utcOffset は元のまま。
+    /// utcOffset を今の端末のタイムゾーンで書き直すと、別のタイムゾーンで開いて変えたときに、記録の日付がずれるため
+    func moved(to date: Date) -> WorkoutRecord {
+        var record = self
+        record.performedAt = date
+        return record
+    }
+
     /// 前日以前の記録か
     func isPast(today: LocalDay) -> Bool {
         day < today

@@ -476,12 +476,9 @@ struct RecordView: View {
         }
     }
 
-    /// 日付と時刻を変える。保存した記録は、記録した場所の時刻のまま変える(utcOffset は変えない)。
-    /// 今の端末のタイムゾーンで書き直すと、別のタイムゾーンで開いて変えたときに、記録の日付がずれるため。
-    /// 新しい記録で最初のセットの前なら、選んだ値を覚えておき、最初のセットを保存するときに使う
+    /// 日付と時刻を変える。新しい記録で最初のセットの前なら、選んだ値を覚えておき、最初のセットを保存するときに使う
     private func changeDate(_ date: Date) {
-        if var record {
-            record.performedAt = date
+        if let record = record?.moved(to: date) {
             do {
                 try database.writer.write { db in try record.update(db) }
                 self.record = record

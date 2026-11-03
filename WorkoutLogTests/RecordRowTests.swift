@@ -80,6 +80,16 @@ struct RecordRowTests {
         #expect(!todays.isPast(today: today))
     }
 
+    @Test func 日付と時刻を変えてもutcOffsetは変えず_日付は記録した場所の時刻で決まる() throws {
+        let tokyo = TimeZone(identifier: "Asia/Tokyo")!
+        let record = WorkoutRecord(exerciseId: 0, performedAt: try Date("2026-10-17T03:00:00Z", strategy: .iso8601), timeZone: tokyo)
+        // 東京の 2026-10-15 08:00。UTC では 2026-10-14
+        let moved = record.moved(to: try Date("2026-10-14T23:00:00Z", strategy: .iso8601))
+        // 東京の時差 +9 時間
+        #expect(moved.utcOffset == 540)
+        #expect(moved.day == LocalDay(try Date("2026-10-15T00:00:00Z", strategy: .iso8601), timeZone: .gmt))
+    }
+
     @Test func 同じ日に同じ種目の別の記録があるときだけ時刻を出す() throws {
         let tokyo = TimeZone(identifier: "Asia/Tokyo")!
         func record(_ id: Int64, _ exerciseId: Int64, _ utc: String) throws -> WorkoutRecord {
