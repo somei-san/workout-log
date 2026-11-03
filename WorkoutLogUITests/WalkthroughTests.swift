@@ -7,8 +7,6 @@ final class WalkthroughTests: XCTestCase {
 
     override func setUp() {
         continueAfterFailure = true
-        // アプリを空の状態で起動する
-        app.launchArguments = ["-uiTesting"]
     }
 
     private func shot(_ name: String) {
@@ -50,7 +48,7 @@ final class WalkthroughTests: XCTestCase {
     }
 
     func testWalkthrough() {
-        app.launch()
+        app.launchEmpty()
         shot("01-ホーム-空")
 
         addExercise("ベンチプレス", part: "胸")

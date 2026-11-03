@@ -1,0 +1,62 @@
+import XCTest
+
+/// 種目の記録でのセットの入力と削除
+@MainActor
+final class RecordTests: XCTestCase {
+    let app = XCUIApplication()
+
+    override func setUp() {
+        continueAfterFailure = false
+    }
+
+    /// 種目を足し、新しい記録を開いて、重さと回数を入れた 1 セットを作る
+    private func recordOneSet() {
+        app.launchEmpty()
+        app.addExercise("懸垂", part: "背中")
+        app.card("懸垂").tap()
+        app.buttons["新しい記録"].tap()
+        let add = app.buttons["行を足す"]
+        XCTAssertTrue(add.waitForExistence(timeout: 5))
+        add.tap()
+        let fields = app.textFields.matching(identifier: "–")
+        XCTAssertTrue(fields.element(boundBy: 1).waitForExistence(timeout: 5))
+        fields.element(boundBy: 0).typeText("20")
+        fields.element(boundBy: 1).tap()
+        fields.element(boundBy: 1).typeText("8")
+        app.buttons["閉じる"].tap()
+    }
+
+    func test最後のセットを消すときは確認を出し_記録ごと消して履歴に戻る() {
+        recordOneSet()
+        // 足した行は、直前のセットの値が入ってセットになる
+        app.buttons["行を足す"].tap()
+        let fields = app.textFields.matching(identifier: "–")
+        XCTAssertEqual(fields.count, 4)
+        XCTAssertEqual(fields.element(boundBy: 2).value as? String, "20")
+        XCTAssertEqual(fields.element(boundBy: 3).value as? String, "8")
+
+        // 2 つのうち 1 つを消すときは確認を出さない
+        app.textFields.matching(identifier: "–").element(boundBy: 2).swipeLeft()
+        app.buttons["削除"].tap()
+        XCTAssertFalse(app.buttons["記録を削除"].waitForExistence(timeout: 2), "最後ではないセットで確認が出た")
+        XCTAssertEqual(app.textFields.matching(identifier: "–").count, 2)
+
+        app.textFields.matching(identifier: "–").element(boundBy: 0).swipeLeft()
+        app.buttons["削除"].tap()
+        let confirm = app.buttons["記録を削除"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "最後のセットで確認が出ない")
+        confirm.tap()
+
+        XCTAssertTrue(app.staticTexts["記録がありません"].waitForExistence(timeout: 5))
+    }
+
+    func test履歴に戻ると記録の値が出て_次の記録では前回として出る() {
+        recordOneSet()
+        app.buttons["BackButton"].firstMatch.tap()
+        // ボリューム / 推定 1RM / 最大重量
+        XCTAssertTrue(app.staticTexts["160 / 24.8 / 20.0"].waitForExistence(timeout: 5))
+
+        app.buttons["新しい記録"].tap()
+        XCTAssertTrue(app.staticTexts["前回  20kg×8"].waitForExistence(timeout: 5))
+    }
+}
