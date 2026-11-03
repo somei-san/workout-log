@@ -171,25 +171,30 @@ struct RecordView: View {
                     .focused($focus, equals: .weight(row.id))
                     .multilineTextAlignment(.trailing)
                     .font(.title3.bold())
+                    .onChange(of: row.weight) { removeDisallowed(row.id, \.weight, filter: NumberInput.decimal) }
                 Text("kg").font(.caption)
                 TextField("–", text: binding(row.id, \.reps))
                     .keyboardType(.numberPad)
                     .focused($focus, equals: .reps(row.id))
                     .multilineTextAlignment(.trailing)
                     .font(.title3.bold())
+                    .onChange(of: row.reps) { removeDisallowed(row.id, \.reps, filter: NumberInput.integer) }
                 Text("回").font(.caption)
             }
             HStack {
                 Text("1RM " + estimated1RMText(row))
                 Spacer()
                 if intensity != .none {
+                    let (keyPath, filter) = intensity == .rpe
+                        ? (\SetRow.rpe, NumberInput.decimal) : (\SetRow.rir, NumberInput.integer)
                     Text(intensity.label)
-                    TextField("", text: binding(row.id, intensity == .rpe ? \.rpe : \.rir))
+                    TextField("", text: binding(row.id, keyPath))
                         .keyboardType(intensity == .rpe ? .decimalPad : .numberPad)
                         .focused($focus, equals: .intensity(row.id))
                         .multilineTextAlignment(.center)
                         .frame(width: 44)
                         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 6))
+                        .onChange(of: row[keyPath: keyPath]) { removeDisallowed(row.id, keyPath, filter: filter) }
                 }
             }
             .font(.caption)
@@ -248,6 +253,17 @@ struct RecordView: View {
             rows[i][keyPath: keyPath] = value
             persist(i)
         }
+    }
+
+    /// 欄の値から入れられない文字を取り除いて保存する。
+    /// 打った値が入った後に onChange から呼ぶ。Binding の set の中で取り除くと、
+    /// 「1a00」と打った欄の表示が「1a00」のまま描き直されなかったため。
+    private func removeDisallowed(_ rowId: UUID, _ keyPath: WritableKeyPath<SetRow, String>, filter: (String) -> String) {
+        guard let i = rows.firstIndex(where: { $0.id == rowId }) else { return }
+        let filtered = filter(rows[i][keyPath: keyPath])
+        guard filtered != rows[i][keyPath: keyPath] else { return }
+        rows[i][keyPath: keyPath] = filtered
+        persist(i)
     }
 
     // MARK: - 読み込み

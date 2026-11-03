@@ -64,11 +64,16 @@ final class WalkthroughTests: XCTestCase {
         tap(button("行を足す"), "行を足す")
         let fields = app.textFields.matching(identifier: "–")
         if fields.count >= 2 {
-            fields.element(boundBy: 0).typeText("100")
+            // 数字以外の文字も打つ。「1a00」を 1 回の typeText で打つと欄に「1」だけが残ったので、分けて打つ
+            for text in ["1", "a", "00"] {
+                fields.element(boundBy: 0).typeText(text)
+            }
             shot("06-記録-重さ入力中")
+            XCTAssertEqual(fields.element(boundBy: 0).value as? String, "100", "重さの欄に数字以外の文字が残っている")
             fields.element(boundBy: 1).tap()
-            fields.element(boundBy: 1).typeText("5")
+            fields.element(boundBy: 1).typeText("5x")
             shot("07-記録-1セット目")
+            XCTAssertEqual(fields.element(boundBy: 1).value as? String, "5", "回数の欄に数字以外の文字が残っている")
         } else {
             XCTFail("重さと回数の欄が無い")
         }
