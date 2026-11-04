@@ -34,27 +34,6 @@ struct RecordRowTests {
         #expect(SetRow(rir: "-1").rirValue == nil)
     }
 
-    @Test func 足す行には直前のセットの重さと回数を入れ_強度は引き継がない() {
-        let rows = [SetRow(weight: "100", reps: "5", rpe: "8"), SetRow(weight: "102.5", reps: "3", rpe: "9", rir: "1"), SetRow()]
-        let row = SetRow.next(after: rows, previous: [WorkoutSet(recordId: 0, position: 0, weight: 60, reps: 10)])
-        #expect(row.weight == "102.5")
-        #expect(row.reps == "3")
-        #expect(row.rpe == "")
-        #expect(row.rir == "")
-    }
-
-    @Test func セットがまだ無ければ前回の1セット目の値を入れる() {
-        let previous = [WorkoutSet(recordId: 0, position: 0, weight: 60, reps: 10), WorkoutSet(recordId: 0, position: 1, weight: 70, reps: 8)]
-        let row = SetRow.next(after: [SetRow()], previous: previous)
-        #expect(row.weight == "60")
-        #expect(row.reps == "10")
-    }
-
-    @Test func 前回も無ければ空の行を足す() {
-        #expect(!SetRow.next(after: [], previous: []).isFilled)
-        #expect(!SetRow.next(after: [], previous: nil).isFilled)
-    }
-
     @Test func 保存したセットが1つだけの行を消すと記録ごと消える() {
         let rows = [saved(1, position: 0), SetRow()]
         #expect(SetRow.deletesRecord(rows, at: 0))

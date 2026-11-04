@@ -156,7 +156,7 @@
 </head>
 <body>
 <h1>筋トレ記録アプリ ワイヤーフレーム</h1>
-<p class="note">タップで動きます。カードで種目の履歴、その「＋」か行で記録画面へ移動、セットの下の「＋」で直前の値の行を追加、値をタップするとキーパッド。種目カードの長押しで非表示・削除のメニュー、分析は指標・期間・表示を切り替えられます。仕様は ux-design.md を参照。</p>
+<p class="note">タップで動きます。カードで種目の履歴、その「＋」か行で記録画面へ移動、セットの下の「＋」で空の行を追加、値をタップするとキーパッド。種目カードの長押しで非表示・削除のメニュー、分析は指標・期間・表示を切り替えられます。仕様は ux-design.md を参照。</p>
 
 <div class="canvas-wrap">
 <div class="canvas" id="canvas">
@@ -716,9 +716,7 @@ function openRec(i, init = [], memo = '', date = TODAY) {
 }
 const cfg = { intensity: 'RPE' }; // 設定画面で切り替える
 function newSet() {
-  const last = [...sets].reverse().find(filled);
-  const [w, r] = last ? [last.w, last.r] : (cur.prev[0] || [null, null]);
-  sets.push({ w, r, rpe: '' });
+  sets.push({ w: null, r: null, rpe: '' });
 }
 /* セットの行の削除。長押しのメニューか左スワイプの「削除」から消す。
    足し直せるので確認は出さない。最後の 1 行だけは 1 回の記録ごと消えるので確認する */
@@ -896,8 +894,8 @@ $('#sortDemo').innerHTML = sortHtml('part', 'f4-desc');
 openExHist(1);
 renderAn();
 openRec(1);
-// 記録画面の初期表示は、2 セット目を足した直後の状態(wireframes.md の図と同じ)
-sets = [{ w: 135, r: 5, rpe: '9' }, { w: 135, r: 5, rpe: '' }];
+// 記録画面の初期表示は、2 行目を足した直後の状態(wireframes.md の図と同じ)
+sets = [{ w: 135, r: 5, rpe: '9' }, { w: null, r: null, rpe: '' }];
 renderSets();
 $('#dateDemo').innerHTML = calHtml('2026/10/17', '09:12');
 // 種目の設定と新しい記録の図は、デッドリフトの最初に並べるセット数を 3 にした状態。見本なので id は外す

@@ -81,6 +81,14 @@ final class WalkthroughTests: XCTestCase {
         shot("08-記録-＋2.5")
         tap(button("閉じる"), "閉じる")
         tap(button("行を足す"), "行を足す 2 回目")
+        if fields.count >= 4 {
+            fields.element(boundBy: 2).tap()
+            fields.element(boundBy: 2).typeText("102.5")
+            fields.element(boundBy: 3).tap()
+            fields.element(boundBy: 3).typeText("5")
+        } else {
+            XCTFail("2 行目の重さと回数の欄が無い")
+        }
         shot("09-記録-2セット目")
         if button("閉じる").exists { button("閉じる").tap() }
 

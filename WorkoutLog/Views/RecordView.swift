@@ -26,20 +26,6 @@ struct RecordView: View {
         /// 0 より小さい値は未入力として扱う
         var rirValue: Int? { Int(rir).flatMap { $0 >= 0 ? $0 : nil } }
 
-        /// 「＋」で足す行。直前のセットの重さと回数を入れる。セットが無ければ前回の 1 セット目、前回も無ければ空の行。
-        /// 強度は引き継がない
-        static func next(after rows: [SetRow], previous: [WorkoutSet]?) -> SetRow {
-            var row = SetRow()
-            if let last = rows.last(where: \.isFilled) {
-                row.weight = last.weight
-                row.reps = last.reps
-            } else if let first = previous?.first {
-                row.weight = Format.weight(first.weight)
-                row.reps = String(first.reps)
-            }
-            return row
-        }
-
         /// i 行目を消すと 1 回の記録ごと消えるか。保存したセットが、その行だけのとき
         static func deletesRecord(_ rows: [SetRow], at i: Int) -> Bool {
             rows[i].saved != nil && rows.filter { $0.saved != nil }.count == 1
@@ -365,13 +351,9 @@ struct RecordView: View {
     // MARK: - 編集
 
     private func addRow() {
-        let row = SetRow.next(after: rows, previous: previousSets)
+        let row = SetRow()
         rows.append(row)
-        if row.isFilled {
-            persist(rows.count - 1)
-        } else {
-            focus = .weight(row.id)
-        }
+        focus = .weight(row.id)
     }
 
     private func adjustWeight(_ delta: Double) {

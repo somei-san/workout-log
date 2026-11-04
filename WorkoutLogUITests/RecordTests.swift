@@ -15,24 +15,32 @@ final class RecordTests: XCTestCase {
         app.addExercise("懸垂", part: "背中")
         app.card("懸垂").tap()
         app.buttons["新しい記録"].tap()
-        let add = app.buttons["行を足す"]
-        XCTAssertTrue(add.waitForExistence(timeout: 5))
-        add.tap()
+        XCTAssertTrue(app.buttons["行を足す"].waitForExistence(timeout: 5))
+        addSet(weight: "20", reps: "8")
+    }
+
+    /// 「＋」で行を足し、その行に重さと回数を入れる
+    private func addSet(weight: String, reps: String) {
         let fields = app.textFields.matching(identifier: "–")
-        XCTAssertTrue(fields.element(boundBy: 1).waitForExistence(timeout: 5))
-        app.type("20", into: fields.element(boundBy: 0))
-        app.type("8", into: fields.element(boundBy: 1))
+        let count = fields.count
+        app.buttons["行を足す"].tap()
+        XCTAssertTrue(fields.element(boundBy: count + 1).waitForExistence(timeout: 5))
+        app.type(weight, into: fields.element(boundBy: count))
+        app.type(reps, into: fields.element(boundBy: count + 1))
         app.closeKeyboard()
     }
 
     func test最後のセットを消すときは確認を出し_記録ごと消して履歴に戻る() {
         recordOneSet()
-        // 足した行は、直前のセットの値が入ってセットになる
+        // 足した行は空の行になる
         app.buttons["行を足す"].tap()
         let fields = app.textFields.matching(identifier: "–")
-        XCTAssertEqual(fields.count, 4)
-        XCTAssertEqual(fields.element(boundBy: 2).value as? String, "20")
-        XCTAssertEqual(fields.element(boundBy: 3).value as? String, "8")
+        XCTAssertTrue(fields.element(boundBy: 3).waitForExistence(timeout: 5))
+        XCTAssertEqual(fields.element(boundBy: 2).value as? String, "–", "足した行に値が入っている")
+        XCTAssertEqual(fields.element(boundBy: 3).value as? String, "–", "足した行に値が入っている")
+        app.type("20", into: fields.element(boundBy: 2))
+        app.type("8", into: fields.element(boundBy: 3))
+        app.closeKeyboard()
 
         // 2 つのうち 1 つを消すときは確認を出さない
         app.swipeToDelete(app.textFields.matching(identifier: "–").element(boundBy: 2))
@@ -84,8 +92,7 @@ final class RecordTests: XCTestCase {
 
     func test履歴に戻ると記録の値が出て_次の記録では前回として出る() {
         recordOneSet()
-        // 足した行は、直前のセットと同じ 20kg×8 のセットになる
-        app.buttons["行を足す"].tap()
+        addSet(weight: "20", reps: "8")
         app.buttons["BackButton"].firstMatch.tap()
         // ボリューム / 推定 1RM / 最大重量
         XCTAssertTrue(app.staticTexts["320 / 24.8 / 20.0"].waitForExistence(timeout: 5))
