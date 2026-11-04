@@ -67,8 +67,6 @@
   .sheet .cal-btns .ok { background: var(--red); color: #fff; font-weight: 600; }
   .sheet .cal-grid button { min-height: 40px; border: 0; background: none; border-radius: 20px; font-size: 15px; }
   .cal-grid button.on { background: var(--red); color: #fff; font-weight: 700; }
-  .cal-grid button.rec::after { content: '•'; display: block; line-height: 0; color: var(--red); }
-  .cal-grid button.on.rec::after { color: #fff; }
   .cal-grid button:disabled { color: #ccc; }
   .set { border-bottom: 1px solid var(--line); padding: 8px 14px; }
   .daymemo { display: flex; padding: 0 18px 16px; }
@@ -344,7 +342,7 @@
   </div>
 
   <div class="frame" style="left:2320px;top:880px">
-    <div class="label">3a. 日付と時刻の変更(記録の上に出る)。• は記録のある日</div>
+    <div class="label">3a. 日付と時刻の変更(記録の上に出る)</div>
     <div class="phone" id="phoneDate">
       <div class="status"></div>
       <div class="screen active">
@@ -659,11 +657,10 @@ const withWeekday = (s) => { const [y, m, d] = s.split('/').map(Number); return 
 let recDate = TODAY, recTime = '09:12', editing = true;
 // 日付と時刻を選ぶシート。見本なので 2026 年 10 月だけを出し、今日より後は選べない
 function calHtml(sel, time) {
-  const recDays = new Set(exDays(cur).map((x) => x.date));
   const blanks = new Date(2026, 9, 1).getDay();
   const days = Array.from({ length: 31 }, (_, k) => {
     const s = `2026/10/${String(k + 1).padStart(2, '0')}`;
-    return `<button data-d="${s}" class="${s === sel ? 'on' : ''} ${recDays.has(s) ? 'rec' : ''}" ${s > TODAY ? 'disabled' : ''}>${k + 1}</button>`;
+    return `<button data-d="${s}" class="${s === sel ? 'on' : ''}" ${s > TODAY ? 'disabled' : ''}>${k + 1}</button>`;
   });
   return `<div class="sheet"><div class="cal"><div class="cal-head"><span>‹</span>2026年10月<span>›</span></div>
     <div class="cal-grid">${[...'日月火水木金土'].map((w) => `<div class="wd">${w}</div>`).join('')}${'<div></div>'.repeat(blanks)}${days.join('')}</div></div>
