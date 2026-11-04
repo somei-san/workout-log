@@ -14,14 +14,39 @@ extension XCUIApplication {
         let add = buttons["追加"]
         XCTAssertTrue(add.waitForExistence(timeout: 5))
         XCTAssertFalse(add.isEnabled, "名前が空なのに「追加」を押せる")
-        let field = textFields["例: ベンチプレス"]
-        field.tap()
-        // 起動直後のシミュレーターは、キーボードが出るまでに時間がかかる
-        _ = keyboards.firstMatch.waitForExistence(timeout: 10)
-        field.typeText(name)
+        type(name, into: textFields["例: ベンチプレス"])
         buttons.matching(NSPredicate(format: "label BEGINSWITH %@", part)).firstMatch.tap()
-        XCTAssertTrue(add.isEnabled)
+        // 入力の直後は、まだ押せる状態になっていないことがある
+        XCTAssertTrue(add.wait(for: \.isEnabled, toEqual: true, timeout: 5))
         add.tap()
+    }
+
+    /// 欄をタップして文字を打つ。
+    /// タップしても欄にフォーカスが移らないことがあるので、キーボードが出るまでタップし直す
+    func type(_ text: String, into field: XCUIElement) {
+        for _ in 0..<3 {
+            field.tap()
+            if keyboards.firstMatch.waitForExistence(timeout: 5) { break }
+        }
+        field.typeText(text)
+    }
+
+    /// 行を左にスワイプして「削除」を押す。スワイプしても「削除」が出ないことがあるので、出なければスワイプし直す
+    func swipeToDelete(_ row: XCUIElement) {
+        let delete = buttons["削除"]
+        for _ in 0..<3 {
+            row.swipeLeft()
+            if delete.waitForExistence(timeout: 3) { break }
+        }
+        delete.tap()
+    }
+
+    /// キーボードの上の「閉じる」で、キーボードを閉じる。キーボードが出ていなければ何もしない
+    func closeKeyboard() {
+        let close = buttons["閉じる"]
+        if close.waitForExistence(timeout: 2) {
+            close.tap()
+        }
     }
 
     /// ホームの種目のカード

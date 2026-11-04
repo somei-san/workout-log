@@ -20,10 +20,9 @@ final class RecordTests: XCTestCase {
         add.tap()
         let fields = app.textFields.matching(identifier: "–")
         XCTAssertTrue(fields.element(boundBy: 1).waitForExistence(timeout: 5))
-        fields.element(boundBy: 0).typeText("20")
-        fields.element(boundBy: 1).tap()
-        fields.element(boundBy: 1).typeText("8")
-        app.buttons["閉じる"].tap()
+        app.type("20", into: fields.element(boundBy: 0))
+        app.type("8", into: fields.element(boundBy: 1))
+        app.closeKeyboard()
     }
 
     func test最後のセットを消すときは確認を出し_記録ごと消して履歴に戻る() {
@@ -36,13 +35,11 @@ final class RecordTests: XCTestCase {
         XCTAssertEqual(fields.element(boundBy: 3).value as? String, "8")
 
         // 2 つのうち 1 つを消すときは確認を出さない
-        app.textFields.matching(identifier: "–").element(boundBy: 2).swipeLeft()
-        app.buttons["削除"].tap()
+        app.swipeToDelete(app.textFields.matching(identifier: "–").element(boundBy: 2))
         XCTAssertFalse(app.buttons["記録を削除"].waitForExistence(timeout: 2), "最後ではないセットで確認が出た")
         XCTAssertEqual(app.textFields.matching(identifier: "–").count, 2)
 
-        app.textFields.matching(identifier: "–").element(boundBy: 0).swipeLeft()
-        app.buttons["削除"].tap()
+        app.swipeToDelete(app.textFields.matching(identifier: "–").element(boundBy: 0))
         let confirm = app.buttons["記録を削除"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 5), "最後のセットで確認が出ない")
         confirm.tap()

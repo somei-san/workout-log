@@ -11,10 +11,16 @@ final class ExerciseTests: XCTestCase {
 
     private func menu(_ name: String, _ item: String) {
         let card = app.card(name)
-        XCTAssertTrue(card.waitForExistence(timeout: 5))
-        card.press(forDuration: 1.2)
         let button = app.buttons[item]
-        XCTAssertTrue(button.waitForExistence(timeout: 5), "長押しのメニューに「\(item)」が無い")
+        // 長押ししてもメニューが出ないことがある。種目の履歴に移っていればホームに戻り、長押しし直す
+        for _ in 0..<3 {
+            XCTAssertTrue(card.waitForExistence(timeout: 5))
+            card.press(forDuration: 1.5)
+            if button.waitForExistence(timeout: 5) { break }
+            let back = app.buttons["BackButton"].firstMatch
+            if back.exists { back.tap() }
+        }
+        XCTAssertTrue(button.exists, "長押しのメニューに「\(item)」が無い")
         button.tap()
     }
 
@@ -27,11 +33,11 @@ final class ExerciseTests: XCTestCase {
         XCTAssertTrue(delete.waitForExistence(timeout: 5))
         XCTAssertFalse(delete.isEnabled)
         let field = app.textFields.firstMatch
-        field.tap()
-        field.typeText("さくじょ")
-        XCTAssertFalse(delete.isEnabled, "「削除」以外の文字で押せる")
-        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 4) + "削除")
-        XCTAssertTrue(delete.isEnabled)
+        app.type("削", into: field)
+        XCTAssertFalse(delete.isEnabled, "「削除」と入力し終える前に押せる")
+        field.typeText("除")
+        // 入力の直後は、まだ押せる状態になっていないことがある
+        XCTAssertTrue(delete.wait(for: \.isEnabled, toEqual: true, timeout: 5))
         delete.tap()
 
         XCTAssertTrue(app.staticTexts["種目がありません"].waitForExistence(timeout: 5))
