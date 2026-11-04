@@ -111,11 +111,11 @@
   .swipe { position: relative; overflow: hidden; }
   .swipe .hrow { transform: translateX(-88px); background: #fff; }
   .swipe .swipe-del { position: absolute; top: 0; right: 0; bottom: 0; width: 88px; border: 0; background: var(--red); color: #fff; font-size: 15px; font-weight: 600; }
-  /* 並べ替えは画面の中央に出すダイアログ。選んでいるものに ✓ */
-  .menu.center { align-items: center; justify-content: center; }
-  .sheet.dialog { width: 84%; border-radius: 22px; padding: 18px 14px 14px; }
-  .sheet.dialog b { text-align: left; font-size: 18px; padding: 0 6px 6px; }
-  .sheet.dialog b small { display: block; font-size: 14px; font-weight: 400; color: #555; margin-top: 4px; }
+  /* 並べ替えは、ボタンの下に開くメニュー。選んでいるものに ✓ */
+  .menu.drop { align-items: flex-start; justify-content: flex-start; padding: 100px 0 0 12px; background: rgba(0,0,0,.08); }
+  .sheet.dropdown .opt { text-align: left; padding-left: 14px; }
+  .sheet.dropdown { width: 72%; border-radius: 14px; padding: 10px 8px; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+  .sheet.dropdown b { text-align: left; font-size: 13px; font-weight: 400; color: #555; padding: 0 8px 2px; }
   .sheet .opt { position: relative; min-height: 48px; border-radius: 24px; }
   .sheet .opt span { position: absolute; right: 18px; font-weight: 700; }
   /* 設定 */
@@ -306,7 +306,7 @@
         </div>
         <div class="scroll" id="gridWrap"></div>
         <div class="menu" id="menu"></div>
-        <div class="menu center" id="sortMenu"></div>
+        <div class="menu drop" id="sortMenu"></div>
       </div>
     </div>
   </div>
@@ -355,7 +355,7 @@
   </div>
 
   <div class="frame" style="left:80px;top:0">
-    <div class="label">1d. 並べ替え(ホームの中央に出る)。図は「部位」の見方で「頻度(4 週間)：降順」を選んだ状態</div>
+    <div class="label">1d. 並べ替え(↕ の下に開く)。図は「部位」の見方で「頻度(4 週間)：降順」を選んだ状態</div>
     <div class="phone" id="phoneSort">
       <div class="status"></div>
       <div class="screen active">
@@ -364,7 +364,7 @@
           <div class="icons"><button class="plus">⚙️</button><button class="plus">＋</button></div>
         </div>
         <div class="scroll" id="partOrderDemo"></div>
-        <div class="menu center open" id="sortDemo"></div>
+        <div class="menu drop open" id="sortDemo"></div>
       </div>
     </div>
   </div>
@@ -463,7 +463,7 @@ function cardHtml(e, i) {
   return `<button class="card ${e.hidden ? 'off' : ''}" style="--pc:${PART[e.p][1]}" data-i="${i}">
     <span class="ico">${PART[e.p][2] ?? PART[e.p][0]}</span><span class="txt"><div class="name">${e.n}</div><div class="meta">${e.days == null ? '<span class="days">未実施</span>' : `<span class="days">${e.days}</span>日前 ${e.d}`}</div></span></button>`;
 }
-// iOS の長押しのメニューには「キャンセル」の項目が無く、外を押して閉じるため
+// メニューは外を押して閉じる。iOS のメニューに「キャンセル」の項目は無いため
 function closeOnOutside(m) {
   m.onclick = (ev) => { if (ev.target === m) m.classList.remove('open'); };
 }
@@ -512,17 +512,16 @@ function partGroupsHtml(ids, rule) {
     return v.length ? `<div class="group">${PART[k][0]}</div><div class="grid">${v.map((i) => cardHtml(EX[i], i)).join('')}</div>` : '';
   }).join('');
 }
-// 並べ替えのダイアログ。並べ方を 1 つだけ選ぶ
+// 並べ替えのメニュー。並べ方を 1 つだけ選ぶ
 function sortHtml(m, rule) {
-  return `<div class="sheet dialog"><b>並べ替え<small>[${m === 'day' ? 'すべて' : '部位'}]</small></b>
-    ${SORTS.map(([v, t]) => `<button class="opt" data-v="${v}">${t}<span>${v === rule ? '✓' : ''}</span></button>`).join('')}
-    <button data-a="close">キャンセル</button></div>`;
+  return `<div class="sheet dropdown"><b>並べ替え [${m === 'day' ? 'すべて' : '部位'}]</b>
+    ${SORTS.map(([v, t]) => `<button class="opt" data-v="${v}">${t}<span>${v === rule ? '✓' : ''}</span></button>`).join('')}</div>`;
 }
 function openSort() {
   const s = $('#sortMenu');
   s.innerHTML = sortHtml(mode, sortCfg[mode]); s.classList.add('open');
+  closeOnOutside(s);
   s.querySelectorAll('[data-v]').forEach((b) => b.onclick = () => { sortCfg[mode] = b.dataset.v; renderGrid(); s.classList.remove('open'); });
-  s.querySelector('[data-a="close"]').onclick = () => s.classList.remove('open');
 }
 $('#toSort').onclick = openSort;
 function renderGrid() {
