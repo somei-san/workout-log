@@ -272,7 +272,7 @@
           <div class="icons"><button class="plus">⚙️</button><button class="plus">＋</button></div>
         </div>
         <div class="scroll" id="menuDemoGrid"></div>
-        <div class="menu open"><div class="sheet"><b>デッドリフト</b><button>種目の設定</button><button>非表示</button><button class="danger">削除</button><button>キャンセル</button></div></div>
+        <div class="menu open"><div class="sheet"><b>デッドリフト</b><button>種目の設定</button><button>非表示</button><button class="danger">削除</button></div></div>
       </div>
     </div>
   </div>
@@ -463,11 +463,16 @@ function cardHtml(e, i) {
   return `<button class="card ${e.hidden ? 'off' : ''}" style="--pc:${PART[e.p][1]}" data-i="${i}">
     <span class="ico">${PART[e.p][2] ?? PART[e.p][0]}</span><span class="txt"><div class="name">${e.n}</div><div class="meta">${e.days == null ? '<span class="days">未実施</span>' : `<span class="days">${e.days}</span>日前 ${e.d}`}</div></span></button>`;
 }
+// iOS の長押しのメニューには「キャンセル」の項目が無く、外を押して閉じるため
+function closeOnOutside(m) {
+  m.onclick = (ev) => { if (ev.target === m) m.classList.remove('open'); };
+}
 function openMenu(i) {
   const m = $('#menu');
   m.innerHTML = `<div class="sheet"><b>${EX[i].n}</b><button data-a="cfg">種目の設定</button>
-    ${EX[i].hidden ? '<button data-a="show">再表示</button>' : '<button data-a="hide">非表示</button>'}<button data-a="del" class="danger">削除</button><button data-a="cancel">キャンセル</button></div>`;
+    ${EX[i].hidden ? '<button data-a="show">再表示</button>' : '<button data-a="hide">非表示</button>'}<button data-a="del" class="danger">削除</button></div>`;
   m.classList.add('open');
+  closeOnOutside(m);
   m.querySelectorAll('button').forEach((b) => b.onclick = () => {
     const a = b.dataset.a;
     if (a === 'hide') EX[i].hidden = true;
@@ -632,13 +637,14 @@ function histRowHtml(x, k) {
   return `<button class="hrow" data-k="${k}"><span class="v">${cols.map((c) => c.f(x.sets)).join(' / ')}</span>${x.memo ? '<span aria-label="メモあり">📝</span>' : ''}<span class="dt">${x.date}</span><span class="chev">›</span></button>`;
 }
 /* 1 回の記録の削除。長押しのメニューか左スワイプの「削除」から、確認のシートを経て消す */
-const recMenuHtml = (x) => `<div class="sheet"><b>${withWeekday(x.date)} の記録</b><button data-a="ask" class="danger">削除</button><button data-a="cancel">キャンセル</button></div>`;
+const recMenuHtml = (x) => `<div class="sheet"><b>${withWeekday(x.date)} の記録</b><button data-a="ask" class="danger">削除</button></div>`;
 const recDelHtml = (x) => `<div class="sheet"><b>${withWeekday(x.date)} の記録を削除</b>
   <p class="sheet-note">セット ${x.sets.length} 個${x.memo ? 'とメモ' : ''}が消えます。元に戻せません。</p>
   <button data-a="del" class="danger">記録を削除</button><button data-a="cancel">キャンセル</button></div>`;
 function openHistMenu(x) {
   const m = $('#histMenu');
   m.innerHTML = recMenuHtml(x); m.classList.add('open');
+  closeOnOutside(m);
   m.querySelector('[data-a="ask"]').onclick = () => { m.innerHTML = recDelHtml(x); bindDel(); };
   const bindDel = () => m.querySelectorAll('button').forEach((b) => {
     if (b.dataset.a === 'del') b.onclick = () => { (cur.delDates = cur.delDates || []).push(x.date); m.classList.remove('open'); openExHist(EX.indexOf(cur)); };
@@ -671,6 +677,7 @@ $('#recDate').onclick = () => {
   const m = $('#recCal');
   let sel = recDate;
   m.innerHTML = calHtml(recDate, recTime); m.classList.add('open');
+  m.onclick = null;
   m.querySelectorAll('button').forEach((b) => b.onclick = () => {
     if (b.dataset.d) { sel = b.dataset.d; m.querySelectorAll('[data-d]').forEach((x) => x.classList.toggle('on', x === b)); return; }
     if (b.dataset.a === 'ok') { recDate = sel; recTime = m.querySelector('input').value; renderRecNav(); }
@@ -723,8 +730,9 @@ function openSetMenu(i) {
   const ask = lastRec
     ? `<p class="sheet-note">最後のセットを消すと、この記録ごと消えます。元に戻せません。</p><button data-a="del" class="danger">記録を削除</button>`
     : '<button data-a="del" class="danger">削除</button>';
-  m.innerHTML = `<div class="sheet"><b>${i + 1} セット目</b>${ask}<button data-a="cancel">キャンセル</button></div>`;
+  m.innerHTML = `<div class="sheet"><b>${i + 1} セット目</b>${ask}</div>`;
   m.classList.add('open');
+  closeOnOutside(m);
   m.querySelectorAll('button').forEach((b) => b.onclick = () => {
     m.classList.remove('open');
     if (b.dataset.a !== 'del') return;
