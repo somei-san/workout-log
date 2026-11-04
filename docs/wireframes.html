@@ -78,7 +78,6 @@
   .cell.focus { border-bottom-color: var(--red); }
   .unit { font-size: 13px; color: #555; }
   .sub { font-size: 12px; color: var(--muted); }
-  .pr { background: #f5c518; color: #5a4300; font-size: 11px; font-weight: 700; border-radius: 8px; padding: 2px 6px; }
   .memo { flex: 1; min-height: 40px; border: 0; border-bottom: 1px solid var(--line); font-size: 14px; }
   .addset { margin: 14px auto; display: block; background: #34c759; color: #fff; border: 0; border-radius: 28px; width: 56px; height: 56px; font-size: 28px; font-weight: 600; }
   /* キーパッド */
@@ -747,7 +746,6 @@ function setsEditHtml(list, memo) {
       </div>
       <div class="row">
         <span class="sub">1RM ${filled(s) ? e1rm(s.w, s.r) + 'kg' : '–'}</span>
-        ${cur.prev.length && s.w > cur.prev[0][0] ? '<span class="pr">PR</span>' : ''}
         <span style="flex:1"></span>
         ${cfg.intensity === 'none' ? '' : `<span class="sub">${cfg.intensity}</span>
         <input class="memo" style="flex:none;width:56px;text-align:center" data-rpe="${i}" value="${s.rpe}" placeholder="–">`}
