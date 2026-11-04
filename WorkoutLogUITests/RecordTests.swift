@@ -84,11 +84,23 @@ final class RecordTests: XCTestCase {
 
     func test履歴に戻ると記録の値が出て_次の記録では前回として出る() {
         recordOneSet()
+        // 足した行は、直前のセットと同じ 20kg×8 のセットになる
+        app.buttons["行を足す"].tap()
         app.buttons["BackButton"].firstMatch.tap()
         // ボリューム / 推定 1RM / 最大重量
-        XCTAssertTrue(app.staticTexts["160 / 24.8 / 20.0"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["320 / 24.8 / 20.0"].waitForExistence(timeout: 5))
 
         app.buttons["新しい記録"].tap()
-        XCTAssertTrue(app.staticTexts["前回  20kg×8"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["前回  20kg×8×2"].waitForExistence(timeout: 5), "同じセットが前回でまとまらない")
+    }
+
+    func test新しい記録には種目の最初に並べるセット数だけ空の行が並ぶ() {
+        app.launchEmpty()
+        app.addExercise("懸垂", part: "背中", initialRowCount: 2)
+        app.card("懸垂").tap()
+        app.buttons["新しい記録"].tap()
+        XCTAssertTrue(app.buttons["行を足す"].waitForExistence(timeout: 5))
+        // 1 行に重さと回数の 2 つの欄がある
+        XCTAssertEqual(app.textFields.matching(identifier: "–").count, 4)
     }
 }

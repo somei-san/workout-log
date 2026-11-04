@@ -9,14 +9,20 @@ extension XCUIApplication {
         launch()
     }
 
-    /// ホームの「＋」から種目を足す。名前が空の間は「追加」を押せないことも確かめる
-    func addExercise(_ name: String, part: String) {
+    /// ホームの「＋」から、最初に並べるセット数を initialRowCount にした種目を足す。
+    /// 名前が空の間は「追加」を押せないことと、セット数が表示に出ることも確かめる
+    func addExercise(_ name: String, part: String, initialRowCount: Int = 0) {
         buttons["種目を追加"].tap()
         let add = buttons["追加"]
         XCTAssertTrue(add.waitForExistence(timeout: 5))
         XCTAssertFalse(add.isEnabled, "名前が空なのに「追加」を押せる")
         type(name, into: textFields["例: ベンチプレス"])
         buttons.matching(NSPredicate(format: "label BEGINSWITH %@", part)).firstMatch.tap()
+        // Stepper の 2 つ目のボタンが「＋」。ボタンの名前は端末の言語で変わるので、順番で選ぶ
+        for _ in 0..<initialRowCount {
+            steppers.firstMatch.buttons.element(boundBy: 1).tap()
+        }
+        XCTAssertTrue(steppers["空の行の数  \(initialRowCount)"].exists)
         // 入力の直後は、まだ押せる状態になっていないことがある
         XCTAssertTrue(add.wait(for: \.isEnabled, toEqual: true, timeout: 5))
         add.tap()
