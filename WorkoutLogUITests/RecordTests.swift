@@ -10,8 +10,8 @@ final class RecordTests: XCTestCase {
     }
 
     /// 種目を足し、新しい記録を開いて、重さと回数を入れた 1 セットを作る
-    private func recordOneSet() {
-        app.launchEmpty()
+    private func recordOneSet(languageIsEnglish: Bool = false) {
+        app.launchEmpty(languageIsEnglish: languageIsEnglish)
         app.addExercise("懸垂", part: "背中")
         app.card("懸垂").tap()
         app.buttons["新しい記録"].tap()
@@ -45,6 +45,41 @@ final class RecordTests: XCTestCase {
         confirm.tap()
 
         XCTAssertTrue(app.staticTexts["記録がありません"].waitForExistence(timeout: 5))
+    }
+
+    func test前日以前の記録は閲覧モードで開き_編集と完了で切り替わる() {
+        recordOneSet(languageIsEnglish: true)
+        let dateButton = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "▾")).firstMatch
+        dateButton.tap()
+        // 前の月の 15 日は、テストをいつ実行しても前日以前になる
+        let picker = app.datePickers["日付"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        picker.buttons["DatePicker.PreviousMonth"].tap()
+        picker.buttons.matching(NSPredicate(format: "label ENDSWITH %@", " 15")).firstMatch.tap()
+        app.buttons["完了"].tap()
+
+        app.buttons["BackButton"].firstMatch.tap()
+        let summary = app.staticTexts["160 / 24.8 / 20.0"]
+        XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        summary.tap()
+
+        let edit = app.buttons["編集"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), "前日以前の記録が閲覧モードで開かない")
+        XCTAssertEqual(app.textFields.matching(identifier: "–").count, 0)
+        XCTAssertTrue(app.staticTexts["20"].exists)
+        XCTAssertFalse(app.buttons["行を足す"].exists)
+        XCTAssertFalse(dateButton.exists)
+        app.staticTexts["20"].swipeLeft()
+        XCTAssertFalse(app.buttons["削除"].waitForExistence(timeout: 2), "閲覧モードで行を消せる")
+
+        edit.tap()
+        XCTAssertTrue(app.buttons["行を足す"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.textFields.matching(identifier: "–").count, 2)
+        XCTAssertTrue(dateButton.exists)
+
+        app.buttons["完了"].tap()
+        XCTAssertTrue(edit.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["行を足す"].exists)
     }
 
     func test履歴に戻ると記録の値が出て_次の記録では前回として出る() {

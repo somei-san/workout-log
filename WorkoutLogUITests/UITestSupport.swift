@@ -2,9 +2,10 @@ import XCTest
 
 @MainActor
 extension XCUIApplication {
-    /// 空のデータベースと空の設定で起動する
-    func launchEmpty() {
-        launchArguments = ["-uiTesting"]
+    /// 空のデータベースと空の設定で起動する。languageIsEnglish なら端末の言語を英語にする。
+    /// 日付のシートのカレンダーの日のラベルは、アプリが日本語のロケールを指定していても英語で出たため
+    func launchEmpty(languageIsEnglish: Bool = false) {
+        launchArguments = ["-uiTesting"] + (languageIsEnglish ? ["-AppleLanguages", "(en)"] : [])
         launch()
     }
 
