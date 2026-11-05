@@ -1,0 +1,4 @@
+// 実機に入れるときの署名のチームを、git で追跡しない Local.xcconfig から読む。
+// チームの ID を公開リポジトリに載せないため。Local.xcconfig には DEVELOPMENT_TEAM = <チームの ID> の 1 行を書く。
+// #include? は無いファイルを読み飛ばすので、Local.xcconfig が無くてもシミュレーター用のビルドは通る
+#include? "Local.xcconfig"

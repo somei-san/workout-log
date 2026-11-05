@@ -65,6 +65,7 @@ Xcode から実機に入れるアプリはいつも DEBUG ビルドで、実機�
 
 - 対応する iOS: 18 以上。利用者が作者本人だけで、古い iOS に合わせる理由が無いため。
 - 端末への入れ方: Xcode から自分の iPhone に直接入れる。
+  - 署名のチームの ID は、リポジトリの直下に `Local.xcconfig` を作って `DEVELOPMENT_TEAM = <チームの ID>` と書く。git では追跡せず、`Signing.xcconfig` から読む。
   - 無料のアカウントでは、入れたアプリが 7 日で起動できなくなり、Xcode から入れ直す([Apple Developer Forums](https://developer.apple.com/forums/thread/71283) の回答による。Apple の公式ドキュメントでは確かめていない)。
 
 ## 実装の順番

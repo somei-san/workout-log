@@ -1,6 +1,9 @@
 # project.yml から生成する
 *.xcodeproj/
 
+# 実機に入れるときの署名のチーム(Signing.xcconfig から読む)
+Local.xcconfig
+
 # Xcode
 xcuserdata/
 DerivedData/
