@@ -5,18 +5,8 @@ extension EnvironmentValues {
 }
 
 extension Part {
-    /// scripts/make-icons.swift も、アイコンの見本を描くために同じ値を持つ
-    var color: Color {
-        switch self {
-        case .chest: Color(red: 0xd9 / 255, green: 0xb1 / 255, blue: 0x3b / 255)
-        case .shoulder: Color(red: 0x9b / 255, green: 0x6d / 255, blue: 0xd6 / 255)
-        case .back: Color(red: 0xb8 / 255, green: 0x73 / 255, blue: 0x33 / 255)
-        case .arm: Color(red: 0xc8 / 255, green: 0x44 / 255, blue: 0x5a / 255)
-        case .abs: Color(red: 0x4c / 255, green: 0xaf / 255, blue: 0x7a / 255)
-        case .leg: Color(red: 0x6a / 255, green: 0xb0 / 255, blue: 0xe0 / 255)
-        case .other: Color(red: 0x8e / 255, green: 0x8e / 255, blue: 0x96 / 255)
-        }
-    }
+    /// 値は scripts/make-icons.swift が持ち、アセットカタログに書き出している
+    var color: Color { Color("Part/\(rawValue)") }
 }
 
 /// 部位のアイコン。部位の色の薄い丸に、体を薄い色で、そのうち鍛える部位を濃い色で重ねる。
