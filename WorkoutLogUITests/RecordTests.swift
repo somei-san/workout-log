@@ -15,15 +15,15 @@ final class RecordTests: XCTestCase {
         app.addExercise("懸垂", part: "背中")
         app.card("懸垂").tap()
         app.buttons["新しい記録"].tap()
-        XCTAssertTrue(app.buttons["行を足す"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["＋ セットを追加"].waitForExistence(timeout: 5))
         addSet(weight: "20", reps: "8")
     }
 
-    /// 「＋」で行を足し、その行に重さと回数を入れる
+    /// 「＋ セットを追加」で行を足し、その行に重さと回数を入れる
     private func addSet(weight: String, reps: String) {
-        let fields = app.textFields.matching(identifier: "–")
+        let fields = app.textFields.matching(identifier: "重さと回数")
         let count = fields.count
-        app.buttons["行を足す"].tap()
+        app.buttons["＋ セットを追加"].tap()
         XCTAssertTrue(fields.element(boundBy: count + 1).waitForExistence(timeout: 5))
         app.type(weight, into: fields.element(boundBy: count))
         app.type(reps, into: fields.element(boundBy: count + 1))
@@ -33,8 +33,8 @@ final class RecordTests: XCTestCase {
     func test最後のセットを消すときは確認を出し_記録ごと消して履歴に戻る() {
         recordOneSet()
         // 足した行は空の行になる
-        app.buttons["行を足す"].tap()
-        let fields = app.textFields.matching(identifier: "–")
+        app.buttons["＋ セットを追加"].tap()
+        let fields = app.textFields.matching(identifier: "重さと回数")
         XCTAssertTrue(fields.element(boundBy: 3).waitForExistence(timeout: 5))
         XCTAssertEqual(fields.element(boundBy: 2).value as? String, "–", "足した行に値が入っている")
         XCTAssertEqual(fields.element(boundBy: 3).value as? String, "–", "足した行に値が入っている")
@@ -43,11 +43,11 @@ final class RecordTests: XCTestCase {
         app.closeKeyboard()
 
         // 2 つのうち 1 つを消すときは確認を出さない
-        app.swipeToDelete(app.textFields.matching(identifier: "–").element(boundBy: 2))
+        app.swipeToDelete(app.textFields.matching(identifier: "重さと回数").element(boundBy: 2))
         XCTAssertFalse(app.buttons["記録を削除"].waitForExistence(timeout: 2), "最後ではないセットで確認が出た")
-        XCTAssertEqual(app.textFields.matching(identifier: "–").count, 2)
+        XCTAssertEqual(app.textFields.matching(identifier: "重さと回数").count, 2)
 
-        app.swipeToDelete(app.textFields.matching(identifier: "–").element(boundBy: 0))
+        app.swipeToDelete(app.textFields.matching(identifier: "重さと回数").element(boundBy: 0))
         let confirm = app.buttons["記録を削除"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 5), "最後のセットで確認が出ない")
         confirm.tap()
@@ -73,21 +73,21 @@ final class RecordTests: XCTestCase {
 
         let edit = app.buttons["編集"]
         XCTAssertTrue(edit.waitForExistence(timeout: 5), "前日以前の記録が閲覧モードで開かない")
-        XCTAssertEqual(app.textFields.matching(identifier: "–").count, 0)
+        XCTAssertEqual(app.textFields.matching(identifier: "重さと回数").count, 0)
         XCTAssertTrue(app.staticTexts["20"].exists)
-        XCTAssertFalse(app.buttons["行を足す"].exists)
+        XCTAssertFalse(app.buttons["＋ セットを追加"].exists)
         XCTAssertFalse(dateButton.exists)
         app.staticTexts["20"].swipeLeft()
         XCTAssertFalse(app.buttons["削除"].waitForExistence(timeout: 2), "閲覧モードで行を消せる")
 
         edit.tap()
-        XCTAssertTrue(app.buttons["行を足す"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.textFields.matching(identifier: "–").count, 2)
+        XCTAssertTrue(app.buttons["＋ セットを追加"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.textFields.matching(identifier: "重さと回数").count, 2)
         XCTAssertTrue(dateButton.exists)
 
         app.buttons["完了"].tap()
         XCTAssertTrue(edit.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["行を足す"].exists)
+        XCTAssertFalse(app.buttons["＋ セットを追加"].exists)
     }
 
     func test履歴に戻ると記録の値が出て_次の記録では前回として出る() {
@@ -101,13 +101,31 @@ final class RecordTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["前回  20kg×8×2"].waitForExistence(timeout: 5), "同じセットが前回でまとまらない")
     }
 
+    func test数字の欄は左の端を押しても_カーソルが数字の一番右に来る() {
+        recordOneSet()
+        app.type("8", into: app.textFields["強度"])
+        app.closeKeyboard()
+        let fields = app.textFields.matching(identifier: "重さと回数")
+        // 右寄せの欄の、数字より左の空いたところを押す。カーソルが一番左に来ると、⌫ を押しても消えない
+        let cases = [(fields.element(boundBy: 0), "2"), (fields.element(boundBy: 1), ""), (app.textFields["強度"], "")]
+        for (field, expected) in cases {
+            for _ in 0..<3 {
+                field.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).tap()
+                if app.keyboards.firstMatch.waitForExistence(timeout: 5) { break }
+            }
+            field.typeText(XCUIKeyboardKey.delete.rawValue)
+            XCTAssertEqual(field.value as? String, expected.isEmpty ? "–" : expected, "⌫ で右から 1 文字消えない")
+            app.closeKeyboard()
+        }
+    }
+
     func test新しい記録には種目の最初に並べるセット数だけ空の行が並ぶ() {
         app.launchEmpty()
         app.addExercise("懸垂", part: "背中", initialRowCount: 2)
         app.card("懸垂").tap()
         app.buttons["新しい記録"].tap()
-        XCTAssertTrue(app.buttons["行を足す"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["＋ セットを追加"].waitForExistence(timeout: 5))
         // 1 行に重さと回数の 2 つの欄がある
-        XCTAssertEqual(app.textFields.matching(identifier: "–").count, 4)
+        XCTAssertEqual(app.textFields.matching(identifier: "重さと回数").count, 4)
     }
 }

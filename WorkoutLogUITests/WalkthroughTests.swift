@@ -61,8 +61,8 @@ final class WalkthroughTests: XCTestCase {
         tap(button("新しい記録"), "新しい記録")
         shot("05-記録-新規")
 
-        tap(button("行を足す"), "行を足す")
-        let fields = app.textFields.matching(identifier: "–")
+        tap(button("＋ セットを追加"), "セットを追加")
+        let fields = app.textFields.matching(identifier: "重さと回数")
         if fields.count >= 2 {
             // 数字以外の文字も打つ。「1a00」を 1 回の typeText で打つと欄に「1」だけが残ったので、分けて打つ
             for text in ["1", "a", "00"] {
@@ -80,7 +80,7 @@ final class WalkthroughTests: XCTestCase {
         tap(button("＋2.5"), "＋2.5")
         shot("08-記録-＋2.5")
         tap(button("閉じる"), "閉じる")
-        tap(button("行を足す"), "行を足す 2 回目")
+        tap(button("＋ セットを追加"), "セットを追加 2 回目")
         if fields.count >= 4 {
             fields.element(boundBy: 2).tap()
             fields.element(boundBy: 2).typeText("102.5")

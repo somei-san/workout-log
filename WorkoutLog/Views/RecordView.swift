@@ -51,6 +51,14 @@ struct RecordView: View {
             case .weight(let id), .reps(let id), .intensity(let id): id
             }
         }
+
+        /// UI テストで欄を探す名前。重さと回数は、画面の並び順で 1 行に 2 つずつ並ぶものとして探す
+        var accessibilityIdentifier: String {
+            switch self {
+            case .weight, .reps: "重さと回数"
+            case .intensity: "強度"
+            }
+        }
     }
 
     let target: Target
@@ -75,6 +83,11 @@ struct RecordView: View {
     @State private var isChoosingDate = false
     @State private var isConfirmingRecordDelete = false
     @FocusState private var focus: Field?
+    /// 欄の最小の幅。重さは「102.5」、回数は 1 桁、RPE は「9.5」が収まる幅。文字の大きさの設定に合わせて広げる。
+    /// 重さは行ごとに数字の右端がそろうよう広めに取り、回数は「×」と数字が離れないよう狭く取る
+    @ScaledMetric(relativeTo: .title2) private var weightWidth: CGFloat = 66
+    @ScaledMetric(relativeTo: .title2) private var repsWidth: CGFloat = 16
+    @ScaledMetric(relativeTo: .subheadline) private var intensityWidth: CGFloat = 36
 
     var body: some View {
         List {
@@ -103,17 +116,9 @@ struct RecordView: View {
                     }
                 }
                 if isEditing {
-                    Button(action: addRow) {
-                        Image(systemName: "plus")
-                            .font(.title.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
-                            .background(.green, in: .circle)
-                    }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityLabel("行を足す")
-                    .listRowSeparator(.hidden)
+                    Button("＋ セットを追加", action: addRow)
+                        .frame(minHeight: 44)
+                        .listRowSeparator(.hidden)
                 }
             }
             Section("メモ") {
@@ -135,9 +140,7 @@ struct RecordView: View {
                         Button { isChoosingDate = true } label: {
                             Text(dateText + " ▾")
                                 .font(.caption)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 3)
-                                .background(.quaternary, in: .capsule)
+                                .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
                         .frame(minHeight: 44)
@@ -174,6 +177,17 @@ struct RecordView: View {
             Text("最後のセットを消すと、この記録ごと消えます。元に戻せません。")
         }
         .task { await load() }
+        .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) { note in
+            // 数字の欄に入ったら、カーソルを数字の一番右に置く。⌫ で右から消せるようにするため。
+            // 右寄せの欄の、数字より左の空いたところを押すと、カーソルが一番左に来てしまう。
+            // 押した位置にカーソルを置くのは欄に入った後なので、次の描画まで待ってから動かす
+            guard let textField = note.object as? UITextField,
+                  [.decimalPad, .numberPad].contains(textField.keyboardType) else { return }
+            Task { @MainActor in
+                let end = textField.endOfDocument
+                textField.selectedTextRange = textField.textRange(from: end, to: end)
+            }
+        }
         .onChange(of: focus) { old, new in
             if let old, old.rowId != new?.rowId {
                 restoreIfCleared(old.rowId)
@@ -181,69 +195,105 @@ struct RecordView: View {
         }
     }
 
+    /// 左に打つもの（重さ × 回数）、右に添えるもの（RPE か RIR と 1RM）を置く
     private func editRow(_ i: Int, _ row: SetRow) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("\(i + 1)")
-                    .frame(width: 24, alignment: .leading)
-                TextField("–", text: binding(row.id, \.weight))
-                    .keyboardType(.decimalPad)
-                    .focused($focus, equals: .weight(row.id))
-                    .multilineTextAlignment(.trailing)
-                    .font(.title3.bold())
+        HStack {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                setNumber(i + 1)
+                numberField(.weight(row.id), binding(row.id, \.weight), keyboard: .decimalPad, width: weightWidth)
+                    .font(.title2)
                     .onChange(of: row.weight) { removeDisallowed(row.id, \.weight, filter: NumberInput.decimal) }
-                Text("kg").font(.caption)
-                TextField("–", text: binding(row.id, \.reps))
-                    .keyboardType(.numberPad)
-                    .focused($focus, equals: .reps(row.id))
-                    .multilineTextAlignment(.trailing)
-                    .font(.title3.bold())
+                unit("kg")
+                times
+                numberField(.reps(row.id), binding(row.id, \.reps), keyboard: .numberPad, width: repsWidth)
+                    .font(.title2)
                     .onChange(of: row.reps) { removeDisallowed(row.id, \.reps, filter: NumberInput.integer) }
-                Text("回").font(.caption)
+                unit("回")
             }
-            HStack {
-                Text("1RM " + estimated1RMText(row))
-                Spacer()
+            Spacer()
+            VStack(alignment: .trailing, spacing: 0) {
                 if intensity != .none {
                     let (keyPath, filter) = intensity == .rpe
                         ? (\SetRow.rpe, NumberInput.decimal) : (\SetRow.rir, NumberInput.integer)
-                    Text(intensity.label)
-                    TextField("", text: binding(row.id, keyPath))
-                        .keyboardType(intensity == .rpe ? .decimalPad : .numberPad)
-                        .focused($focus, equals: .intensity(row.id))
-                        .multilineTextAlignment(.center)
-                        .frame(width: 44)
-                        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 6))
-                        .onChange(of: row[keyPath: keyPath]) { removeDisallowed(row.id, keyPath, filter: filter) }
+                    HStack(spacing: 2) {
+                        unit(intensity.label)
+                        numberField(.intensity(row.id), binding(row.id, keyPath),
+                                    keyboard: intensity == .rpe ? .decimalPad : .numberPad, width: intensityWidth, alignment: .center)
+                            .font(.subheadline)
+                            .onChange(of: row[keyPath: keyPath]) { removeDisallowed(row.id, keyPath, filter: filter) }
+                    }
                 }
+                Text("1RM " + estimated1RMText(row))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .padding(.leading, 24)
         }
-        .frame(minHeight: 56)
+        .frame(minHeight: 60)
     }
 
     private func viewRow(_ number: Int, _ set: WorkoutSet) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("\(number)")
-                    .frame(width: 24, alignment: .leading)
-                Text(Format.weight(set.weight)).font(.title3.bold())
-                Text("kg ×").font(.caption)
-                Text("\(set.reps)").font(.title3.bold())
-                Text("回").font(.caption)
-                Spacer()
-                if let value = intensity == .rpe ? set.rpe.map(Format.weight) : intensity == .rir ? set.rir.map(String.init) : nil {
-                    Text("\(intensity.label) \(value)").font(.caption).foregroundStyle(.secondary)
-                }
+        HStack {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                setNumber(number)
+                Text(Format.weight(set.weight))
+                    .font(.title2)
+                    .monospacedDigit()
+                    .frame(minWidth: weightWidth, alignment: .trailing)
+                unit("kg")
+                times
+                Text("\(set.reps)")
+                    .font(.title2)
+                    .monospacedDigit()
+                    .frame(minWidth: repsWidth, alignment: .trailing)
+                unit("回")
             }
-            Text("1RM " + Format.weight((set.estimated1RM * 10).rounded() / 10) + "kg")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.leading, 24)
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                if let value = intensity == .rpe ? set.rpe.map(Format.weight) : intensity == .rir ? set.rir.map(String.init) : nil {
+                    Text("\(intensity.label) \(value)").font(.subheadline)
+                }
+                Text("1RM " + Format.weight((set.estimated1RM * 10).rounded() / 10) + "kg")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
-        .frame(minHeight: 56)
+        .frame(minHeight: 60)
+    }
+
+    /// 数字の欄。欄の幅を数字の桁に合わせ、重さ × 回数が 1 つの塊に見えるようにする。
+    /// 見た目は数字だけだが、押せる高さは 44pt 取る。打っている欄は数字の色で分かるようにする
+    private func numberField(_ field: Field, _ text: Binding<String>, keyboard: UIKeyboardType, width: CGFloat,
+                             alignment: TextAlignment = .trailing) -> some View {
+        TextField("–", text: text)
+            .keyboardType(keyboard)
+            .focused($focus, equals: field)
+            .multilineTextAlignment(alignment)
+            .monospacedDigit()
+            .foregroundStyle(focus == field ? Color.accentColor : .primary)
+            // 欄の幅は打った数字に合わせて伸ばし、width より狭くはしない
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(minWidth: width, alignment: alignment == .center ? .center : .trailing)
+            .frame(minHeight: 44)
+            // 欄の上下の余白を押しても、その欄に入るようにする
+            .background { Color.clear.contentShape(.rect).onTapGesture { focus = field } }
+            .accessibilityIdentifier(field.accessibilityIdentifier)
+    }
+
+    private func setNumber(_ number: Int) -> some View {
+        Text("\(number)")
+            .font(.footnote)
+            .monospacedDigit()
+            .foregroundStyle(.tertiary)
+            .frame(width: 20, alignment: .leading)
+    }
+
+    private func unit(_ text: String) -> some View {
+        Text(text).font(.caption).foregroundStyle(.secondary)
+    }
+
+    private var times: some View {
+        Text("×").font(.footnote).foregroundStyle(.tertiary).padding(.horizontal, 4)
     }
 
     private var previousText: String {

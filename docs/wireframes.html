@@ -47,8 +47,8 @@
   .prev { padding: 8px 18px; font-size: 13px; color: #555; }
   .nav .ttl { display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
   .nav .ttl button { min-height: 44px; padding: 2px 0 0; font-size: 12px; font-weight: 400; }
-  /* 日付は押せると分かるよう、半透明の角丸と ▾ で囲む */
-  .nav .ttl button span { display: inline-block; background: rgba(255,255,255,.25); border-radius: 12px; padding: 3px 10px; }
+  /* 日付は押せると分かるよう、▾ を付ける */
+  .nav .ttl button span { display: inline-block; padding: 3px 10px; }
   .cal { padding: 4px 4px 0; }
   .cal-head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; padding: 0 4px 8px; }
   .cal-head span { color: var(--muted); font-size: 20px; padding: 0 10px; }
@@ -57,7 +57,7 @@
   .nav .ttl button.plain span { background: none; }
   .nav .ttl button.plain:disabled { opacity: 1; }
   .set.view .row { min-height: 40px; }
-  .vval { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .vval { font-size: 22px; font-weight: 400; font-variant-numeric: tabular-nums; }
   .memo-view { padding: 14px 18px; font-size: 15px; color: #333; line-height: 1.6; }
   .memo-view .sub { margin-bottom: 4px; }
   .cal-time { display: flex; justify-content: space-between; align-items: center; padding: 8px 6px; border-top: 1px solid var(--line); font-size: 15px; }
@@ -72,12 +72,20 @@
   .daymemo { display: flex; padding: 0 18px 16px; }
   .row { display: flex; align-items: center; gap: 8px; min-height: 56px; }
   .no { width: 18px; font-size: 18px; }
-  .cell { flex: 1; min-height: 44px; border: 0; border-bottom: 2px solid var(--line); background: none; font-size: 22px; font-weight: 700; text-align: right; padding: 0 4px; }
-  .cell.focus { border-bottom-color: var(--red); }
+  /* 値の欄は枠も下線も付けず、数字だけを出す。打っている欄は数字の色で示す */
+  .cell { width: 3.2em; flex: none; min-height: 44px; border: 0; background: none; font-size: 22px; font-weight: 400; text-align: right; padding: 0; font-variant-numeric: tabular-nums; }
+  .cell.reps { width: 1.5em; }
+  .rpe { width: 2.2em; min-height: 44px; border: 0; background: none; font-size: 15px; text-align: center; padding: 0; }
+  .rpe:focus { outline: none; color: #0a84ff; }
+  .cell.focus { color: #0a84ff; }
+  .pair { display: flex; align-items: baseline; gap: 4px; }
+  .times { color: #bbb; font-size: 13px; margin: 0 4px; }
+  .side { margin-left: auto; display: grid; justify-items: end; }
+  .side .sub { margin-top: -8px; }
   .unit { font-size: 13px; color: #555; }
   .sub { font-size: 12px; color: var(--muted); }
   .memo { flex: 1; min-height: 40px; border: 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-  .addset { margin: 14px auto; display: block; background: #34c759; color: #fff; border: 0; border-radius: 28px; width: 56px; height: 56px; font-size: 28px; font-weight: 600; }
+  .addset { margin: 4px 14px; display: block; background: none; color: #0a84ff; border: 0; min-height: 44px; font-size: 15px; padding: 0; }
   /* キーパッド */
   .pad { flex: none; background: #f2f2f6; border-top: 1px solid var(--line); padding: 8px; display: none; }
   .pad.open { display: block; }
@@ -156,7 +164,7 @@
 </head>
 <body>
 <h1>筋トレ記録アプリ ワイヤーフレーム</h1>
-<p class="note">タップで動きます。カードで種目の履歴、その「＋」か行で記録画面へ移動、セットの下の「＋」で空の行を追加、値をタップするとキーパッド。種目カードの長押しで非表示・削除のメニュー、分析は指標・期間・表示を切り替えられます。仕様は ux-design.md を参照。</p>
+<p class="note">タップで動きます。カードで種目の履歴、その「＋」か行で記録画面へ移動、セットの下の「＋ セットを追加」で空の行を追加、値をタップするとキーパッド。種目カードの長押しで非表示・削除のメニュー、分析は指標・期間・表示を切り替えられます。仕様は ux-design.md を参照。</p>
 
 <div class="canvas-wrap">
 <div class="canvas" id="canvas">
@@ -696,9 +704,8 @@ const filled = (s) => s.w != null && s.r != null;
 function setsViewHtml(list, memo) {
   return list.filter(filled).map((s, i) => `
     <div class="set view">
-      <div class="row"><span class="no">${i + 1}</span><span class="vval">${Number(s.w).toFixed(1)}</span><span class="unit">kg ×</span><span class="vval">${s.r}</span><span class="unit">回</span>
-        <span style="flex:1"></span>${cfg.intensity === 'none' ? '' : `<span class="sub">${cfg.intensity} ${s.rpe || '–'}</span>`}</div>
-      <div class="sub">1RM ${e1rm(s.w, s.r)}kg</div>
+      <div class="row"><span class="pair"><span class="no">${i + 1}</span><span class="vval">${Number(s.w).toFixed(1)}</span><span class="unit">kg</span><span class="times">×</span><span class="vval">${s.r}</span><span class="unit">回</span></span>
+        <span class="side">${cfg.intensity === 'none' ? '' : `<span>${cfg.intensity} ${s.rpe || '–'}</span>`}<span class="sub" style="margin-top:0">1RM ${e1rm(s.w, s.r)}kg</span></span></div>
     </div>`).join('') + (memo ? `<div class="memo-view"><div class="sub">メモ</div>${memo}</div>` : '');
 }
 function openRec(i, init = [], memo = '', date = TODAY) {
@@ -742,17 +749,19 @@ function setsEditHtml(list, memo) {
   return list.map((s, i) => `
     <div class="set" data-s="${i}">
       <div class="row">
-        <span class="no">${i + 1}</span>
-        <button class="${cls(s, i, 'w')}" data-f="w" data-i="${i}">${s.w == null ? '' : Number(s.w).toFixed(1)}</button><span class="unit">kg</span>
-        <button class="${cls(s, i, 'r')}" data-f="r" data-i="${i}">${s.r ?? ''}</button><span class="unit">回</span>
+        <span class="pair">
+          <span class="no">${i + 1}</span>
+          <button class="${cls(s, i, 'w')}" data-f="w" data-i="${i}">${s.w == null ? '' : Number(s.w).toFixed(1)}</button><span class="unit">kg</span>
+          <span class="times">×</span>
+          <button class="${cls(s, i, 'r')} reps" data-f="r" data-i="${i}">${s.r ?? ''}</button><span class="unit">回</span>
+        </span>
+        <span class="side">
+          ${cfg.intensity === 'none' ? '' : `<span><span class="sub">${cfg.intensity}</span>
+          <input class="rpe" data-rpe="${i}" value="${s.rpe}" placeholder="–"></span>`}
+          <span class="sub">1RM ${filled(s) ? e1rm(s.w, s.r) + 'kg' : '–'}</span>
+        </span>
       </div>
-      <div class="row">
-        <span class="sub">1RM ${filled(s) ? e1rm(s.w, s.r) + 'kg' : '–'}</span>
-        <span style="flex:1"></span>
-        ${cfg.intensity === 'none' ? '' : `<span class="sub">${cfg.intensity}</span>
-        <input class="memo" style="flex:none;width:56px;text-align:center" data-rpe="${i}" value="${s.rpe}" placeholder="–">`}
-      </div>
-    </div>`).join('') + '<button class="addset" id="addSet" aria-label="セットを追加">＋</button>'
+    </div>`).join('') + '<button class="addset" id="addSet">＋ セットを追加</button>'
     + `<div class="daymemo"><input class="memo" id="dayMemo" placeholder="メモ" value="${memo}"></div>`;
 }
 function renderSets() {
