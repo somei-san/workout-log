@@ -1,7 +1,7 @@
 // アプリのアイコンと部位の形を CoreGraphics で描き、Assets.xcassets に書き出す。
+// 部位の色とアクセントカラーもここで持ち、アセットカタログの色として書き出す。
 // 実行: swift scripts/make-icons.swift [見本の PNG の出力先]
 // 見本の出力先を渡すと、部位のアイコン(ライトとダーク)と App アイコンを並べた PNG も書く。
-// 部位の色は WorkoutLog/Views/Common.swift の Part.color と同じ値にする(見本の描画にだけ使う)。
 import CoreGraphics
 import Foundation
 import ImageIO
@@ -181,6 +181,22 @@ func writePNG(_ image: CGImage, to url: URL) throws {
     guard CGImageDestinationFinalize(dest) else { throw CocoaError(.fileWriteUnknown) }
 }
 
+/// 色を colorset に書く。dark を渡すと、ダークモードではその色にする
+func writeColor(_ light: Int, dark: Int? = nil, name: String) throws {
+    func entry(_ hex: Int) -> [String: Any] {
+        let components = [("red", hex >> 16), ("green", hex >> 8), ("blue", hex)]
+            .reduce(into: ["alpha": "1.000"]) { $0[$1.0] = String(format: "0x%02X", $1.1 & 0xff) }
+        return ["color-space": "srgb", "components": components]
+    }
+    var colors: [[String: Any]] = [["idiom": "universal", "color": entry(light)]]
+    if let dark {
+        colors.append(["idiom": "universal", "color": entry(dark),
+                       "appearances": [["appearance": "luminosity", "value": "dark"]]])
+    }
+    try writeJSON(["colors": colors, "info": ["author": "xcode", "version": 1]],
+                  to: assets.appendingPathComponent("\(name).colorset/Contents.json"))
+}
+
 /// 形を、テンプレート画像として使うベクターの PDF の imageset に書く
 func writeTemplateImage(_ paths: [CGPath], name: String) throws {
     let dir = assets.appendingPathComponent("Part/\(name).imageset")
@@ -262,13 +278,16 @@ func writePreview(to url: URL) throws {
 
 try writeJSON(["info": ["author": "xcode", "version": 1]], to: assets.appendingPathComponent("Contents.json"))
 try writeAppIcon()
-// 形を消したり名前を変えたりしたときに古い画像が残らないよう、部位の画像はフォルダーごと書き直す
+// App アイコンのライムに揃える。ライトでは白の背景で文字が読めるよう(コントラスト比 4.5 以上)、暗くする
+try writeColor(0x5a7d00, dark: 0x9acd14, name: "AccentColor")
+// 形を消したり名前を変えたりしたときに古い画像が残らないよう、部位の画像と色はフォルダーごと書き直す
 let partDir = assets.appendingPathComponent("Part")
 if FileManager.default.fileExists(atPath: partDir.path) {
     try FileManager.default.removeItem(at: partDir)
 }
 // 体の残りが無い部位(その他)にも空の画像を書き、画面の側がどの部位も同じ 2 枚を重ねられるようにする
 for layer in partLayers {
+    try writeColor(layer.color, name: "Part/\(layer.name)")
     try writeTemplateImage(layer.base, name: "\(layer.name)-base")
     try writeTemplateImage(layer.target, name: "\(layer.name)-target")
 }
