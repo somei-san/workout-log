@@ -197,16 +197,30 @@ func writeColor(_ light: Int, dark: Int? = nil, name: String) throws {
                   to: assets.appendingPathComponent("\(name).colorset/Contents.json"))
 }
 
+/// CoreGraphics が入れる作成日時と ID を、決まった値に置き換えた PDF を返す。
+/// 形が変わらなければ、書き出し直しても PDF が差分に出ないようにするため。
+/// 置き換える前と同じ長さにして、オブジェクトの位置の表(xref)をずらさない
+func withoutTimestamp(_ pdf: Data) -> Data {
+    var text = String(data: pdf, encoding: .isoLatin1)!
+    for (pattern, fixed) in [(#"D:\d{14}Z00'00'"#, "D:20000101000000Z00'00'"),
+                             (#"(?<=<)[0-9a-f]{32}(?=>)"#, String(repeating: "0", count: 32))] {
+        text = text.replacingOccurrences(of: pattern, with: fixed, options: .regularExpression)
+    }
+    return text.data(using: .isoLatin1)!
+}
+
 /// 形を、テンプレート画像として使うベクターの PDF の imageset に書く
 func writeTemplateImage(_ paths: [CGPath], name: String) throws {
     let dir = assets.appendingPathComponent("Part/\(name).imageset")
     try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     var box = CGRect(x: 0, y: 0, width: 100, height: 100)
-    let ctx = CGContext(dir.appendingPathComponent("\(name).pdf") as CFURL, mediaBox: &box, nil)!
+    let pdf = NSMutableData()
+    let ctx = CGContext(consumer: CGDataConsumer(data: pdf)!, mediaBox: &box, nil)!
     ctx.beginPDFPage(nil)
     fill(paths, in: ctx, rect: box, color: rgb(0x000000))
     ctx.endPDFPage()
     ctx.closePDF()
+    try withoutTimestamp(pdf as Data).write(to: dir.appendingPathComponent("\(name).pdf"))
     try writeJSON([
         "images": [["filename": "\(name).pdf", "idiom": "universal"]],
         "info": ["author": "xcode", "version": 1],
