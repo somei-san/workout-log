@@ -83,11 +83,11 @@ struct RecordView: View {
     @State private var isChoosingDate = false
     @State private var isConfirmingRecordDelete = false
     @FocusState private var focus: Field?
-    /// 欄の最小の幅。重さは「102.5」、回数は 1 桁、RPE は「9.5」が収まる幅。文字の大きさの設定に合わせて広げる。
+    /// 欄の最小の幅。重さは「102.5」、回数は 1 桁が収まる幅。RPE は押しやすいよう 44pt 取る。文字の大きさの設定に合わせて広げる。
     /// 重さは行ごとに数字の右端がそろうよう広めに取り、回数は「×」と数字が離れないよう狭く取る
     @ScaledMetric(relativeTo: .title2) private var weightWidth: CGFloat = 66
     @ScaledMetric(relativeTo: .title2) private var repsWidth: CGFloat = 16
-    @ScaledMetric(relativeTo: .subheadline) private var intensityWidth: CGFloat = 36
+    @ScaledMetric(relativeTo: .subheadline) private var intensityWidth: CGFloat = 44
 
     var body: some View {
         List {
@@ -265,19 +265,25 @@ struct RecordView: View {
     /// 見た目は数字だけだが、押せる高さは 44pt 取る。打っている欄は数字の色で分かるようにする
     private func numberField(_ field: Field, _ text: Binding<String>, keyboard: UIKeyboardType, width: CGFloat,
                              alignment: TextAlignment = .trailing) -> some View {
-        TextField("–", text: text)
-            .keyboardType(keyboard)
-            .focused($focus, equals: field)
-            .multilineTextAlignment(alignment)
+        // 欄の幅は、見えない Text で打った数字の幅を測って決め、width より狭くはしない。
+        // TextField に fixedSize を付けて縮めると、空の欄が「–」の幅になり、
+        // カーソルが見えず、押してもキーボードが出ないことがある
+        Text(text.wrappedValue.isEmpty ? "–" : text.wrappedValue)
             .monospacedDigit()
-            .foregroundStyle(focus == field ? Color.accentColor : .primary)
-            // 欄の幅は打った数字に合わせて伸ばし、width より狭くはしない
-            .fixedSize(horizontal: true, vertical: false)
-            .frame(minWidth: width, alignment: alignment == .center ? .center : .trailing)
+            .hidden()
+            .frame(minWidth: width)
+            .overlay {
+                TextField("–", text: text)
+                    .keyboardType(keyboard)
+                    .focused($focus, equals: field)
+                    .multilineTextAlignment(alignment)
+                    .monospacedDigit()
+                    .foregroundStyle(focus == field ? Color.accentColor : .primary)
+                    .accessibilityIdentifier(field.accessibilityIdentifier)
+            }
             .frame(minHeight: 44)
             // 欄の上下の余白を押しても、その欄に入るようにする
             .background { Color.clear.contentShape(.rect).onTapGesture { focus = field } }
-            .accessibilityIdentifier(field.accessibilityIdentifier)
     }
 
     private func setNumber(_ number: Int) -> some View {
