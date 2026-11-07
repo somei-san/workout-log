@@ -59,13 +59,12 @@ struct HomeView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Picker("見方", selection: $mode) {
-                        Text("すべて").tag(Mode.all)
-                        Text("部位").tag(Mode.part)
-                    }
-                    .pickerStyle(.segmented)
-                    .fixedSize()
+                // 切り替えは自分の枠を持つので、ツールバーの枠を重ねると二重に見える
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .topBarLeading) { modePicker }
+                        .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .topBarLeading) { modePicker }
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
@@ -126,6 +125,15 @@ struct HomeView: View {
                 print("ホームの種目を読めない: \(error)")
             }
         }
+    }
+
+    private var modePicker: some View {
+        Picker("見方", selection: $mode) {
+            Text("すべて").tag(Mode.all)
+            Text("部位").tag(Mode.part)
+        }
+        .pickerStyle(.segmented)
+        .fixedSize()
     }
 
     private func grid(_ cards: [ExerciseCard]) -> some View {
