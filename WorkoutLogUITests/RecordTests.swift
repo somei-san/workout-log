@@ -36,6 +36,8 @@ final class RecordTests: XCTestCase {
         app.buttons["＋ セットを追加"].tap()
         let fields = app.textFields.matching(identifier: "重さと回数")
         XCTAssertTrue(fields.element(boundBy: 3).waitForExistence(timeout: 5))
+        // 入力中の欄は空でも「–」を出さないので、キーボードを閉じてから見る
+        app.closeKeyboard()
         XCTAssertEqual(fields.element(boundBy: 2).value as? String, "–", "足した行に値が入っている")
         XCTAssertEqual(fields.element(boundBy: 3).value as? String, "–", "足した行に値が入っている")
         app.type("20", into: fields.element(boundBy: 2))
@@ -114,7 +116,8 @@ final class RecordTests: XCTestCase {
                 if app.keyboards.firstMatch.waitForExistence(timeout: 5) { break }
             }
             field.typeText(XCUIKeyboardKey.delete.rawValue)
-            XCTAssertEqual(field.value as? String, expected.isEmpty ? "–" : expected, "⌫ で右から 1 文字消えない")
+            // 入力中の欄は「–」を出さないので、空になると値は空文字になる
+            XCTAssertEqual(field.value as? String, expected, "⌫ で右から 1 文字消えない")
             app.closeKeyboard()
         }
     }
