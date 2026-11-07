@@ -273,7 +273,9 @@ struct RecordView: View {
             .hidden()
             .frame(minWidth: width)
             .overlay {
-                TextField("–", text: text)
+                // 入力中の欄では、空でもカーソルだけを出す。中央寄せの空の欄で「–」を出すと、
+                // カーソルが「–」の左に離れて出た。幅は上の Text が「–」で測るので変わらない
+                TextField(focus == field ? "" : "–", text: text)
                     .keyboardType(keyboard)
                     .focused($focus, equals: field)
                     .multilineTextAlignment(alignment)
