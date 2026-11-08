@@ -83,6 +83,9 @@ struct RecordView: View {
     @State private var isChoosingDate = false
     @State private var isConfirmingRecordDelete = false
     @FocusState private var focus: Field?
+    @FocusState private var isMemoFocused: Bool
+    @State private var isKeyboardShown = false
+    private let memoId = "memo"
     /// 欄の最小の幅。重さは「102.5」、回数は 1 桁が収まる幅。RPE は押しやすいよう 44pt 取る。文字の大きさの設定に合わせて広げる。
     /// 重さは行ごとに数字の右端がそろうよう広めに取り、回数は「×」と数字が離れないよう狭く取る
     @ScaledMetric(relativeTo: .title2) private var weightWidth: CGFloat = 66
@@ -90,6 +93,24 @@ struct RecordView: View {
     @ScaledMetric(relativeTo: .subheadline) private var intensityWidth: CGFloat = 44
 
     var body: some View {
+        ScrollViewReader { proxy in
+            list
+                // メモの欄は、欄に入ってもリストが送らず、キーボードに隠れる。キーボードが出たら、ボタンの並びの余白の上まで自分で送る。
+                // 数字の欄からメモへ移るときはキーボードが出たままで、出たときの通知が来ないことがあるので、大きさが変わったときと欄に入ったときにも送る
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)) { _ in
+                    scrollToMemo(proxy)
+                }
+                .onChange(of: isMemoFocused) { scrollToMemo(proxy) }
+                .onChange(of: memo) { scrollToMemo(proxy) }
+        }
+    }
+
+    private func scrollToMemo(_ proxy: ScrollViewProxy) {
+        guard isMemoFocused else { return }
+        withAnimation { proxy.scrollTo(memoId, anchor: .bottom) }
+    }
+
+    private var list: some View {
         List {
             Section {
                 Text("前回  " + previousText)
@@ -124,6 +145,8 @@ struct RecordView: View {
             Section("メモ") {
                 if isEditing {
                     TextField("メモ", text: $memo, axis: .vertical)
+                        .focused($isMemoFocused)
+                        .id(memoId)
                         .onChange(of: memo) { saveMemo() }
                 } else {
                     Text(memo)
@@ -158,33 +181,20 @@ struct RecordView: View {
                     }
                 }
             }
-            // 打っている欄に効くボタンだけを出す。効かない欄で出すと、浮いたボタンが打った文字に重なるだけになる
-            if case .weight = focus {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Button("−2.5") { adjustWeight(-2.5) }
-                    Button("＋2.5") { adjustWeight(2.5) }
-                    Spacer()
-                    Button("上と同じ", action: copyWeightAbove)
-                        .disabled(rowAbove?.weightValue == nil)
-                    Button("次へ", action: moveToNextField)
-                }
+        }
+        // キーボードの上のボタンは、OS のキーボードのツールバーではなく画面の下に置く。
+        // ツールバーはキーボードにくっついて浮き、OS が打っている欄をツールバーの裏まで送るため、欄が隠れる。
+        // 画面の下に置くと、打っている欄はボタンの並びと余白のさらに上まで送られる
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if isKeyboardShown && isEditing {
+                keyboardBar
             }
-            if case .reps = focus {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Button("−1") { adjustReps(-1) }
-                    Button("＋1") { adjustReps(1) }
-                    Spacer()
-                    Button("上と同じ", action: copyRepsAbove)
-                        .disabled(rowAbove?.repsValue == nil)
-                    Button("次へ", action: moveToNextField)
-                }
-            }
-            if case .intensity = focus {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("次へ", action: moveToNextField)
-                }
-            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardShown = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardShown = false
         }
         .dismissesKeyboardOnTapOutside()
         .sheet(isPresented: $isChoosingDate) {
@@ -305,6 +315,43 @@ struct RecordView: View {
             .frame(minHeight: 44)
             // 欄の上下の余白を押しても、その欄に入るようにする
             .background { Color.clear.contentShape(.rect).onTapGesture { focus = field } }
+    }
+
+    /// キーボードのすぐ上に出すボタンの並び。打っている欄に効くボタンだけを出す。
+    /// メモではボタンを出さず、余白だけを取る。打っている行がキーボードにくっつかないようにするため
+    private var keyboardBar: some View {
+        VStack(spacing: 0) {
+            if let focus {
+                HStack(spacing: 8) {
+                    switch focus {
+                    case .weight:
+                        Button("前回と同じ", action: copyWeightAbove)
+                            .disabled(rowAbove?.weightValue == nil)
+                        Button("−2.5") { adjustWeight(-2.5) }
+                        Button("＋2.5") { adjustWeight(2.5) }
+                    case .reps:
+                        Button("前回と同じ", action: copyRepsAbove)
+                            .disabled(rowAbove?.repsValue == nil)
+                        Button("−1") { adjustReps(-1) }
+                        Button("＋1") { adjustReps(1) }
+                    case .intensity:
+                        EmptyView()
+                    }
+                    Spacer()
+                    Button("次へ", action: moveToNextField)
+                        .fontWeight(.semibold)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .padding(8)
+                .background(.regularMaterial, in: .capsule)
+                .keepsKeyboardOnTap()
+                .padding(.horizontal, 12)
+            }
+        }
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity)
     }
 
     private func setNumber(_ number: Int) -> some View {
@@ -445,16 +492,19 @@ struct RecordView: View {
         persist(i)
     }
 
+    /// 写したら次の欄へ移る。前回と同じ値なら、その欄で打つものは無いため
     private func copyWeightAbove() {
         guard let i = focusedIndex, let above = rowAbove?.weightValue else { return }
         rows[i].weight = Format.weight(above)
         persist(i)
+        moveToNextField()
     }
 
     private func copyRepsAbove() {
         guard let i = focusedIndex, let above = rowAbove?.repsValue else { return }
         rows[i].reps = String(above)
         persist(i)
+        moveToNextField()
     }
 
     /// 重さ → 回数 → 強度（出しているときだけ）→ 次の行の重さ、の順に次の欄へ移る。
