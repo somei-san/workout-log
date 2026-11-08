@@ -158,16 +158,35 @@ struct RecordView: View {
                     }
                 }
             }
-            ToolbarItemGroup(placement: .keyboard) {
-                Button("−2.5") { adjustWeight(-2.5) }
-                Button("＋2.5") { adjustWeight(2.5) }
-                Spacer()
-                Button("−1") { adjustReps(-1) }
-                Button("＋1") { adjustReps(1) }
-                Spacer()
-                Button("閉じる") { focus = nil }
+            // 打っている欄に効くボタンだけを出す。効かない欄で出すと、浮いたボタンが打った文字に重なるだけになる
+            if case .weight = focus {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Button("−2.5") { adjustWeight(-2.5) }
+                    Button("＋2.5") { adjustWeight(2.5) }
+                    Spacer()
+                    Button("上と同じ", action: copyWeightAbove)
+                        .disabled(rowAbove?.weightValue == nil)
+                    Button("次へ", action: moveToNextField)
+                }
+            }
+            if case .reps = focus {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Button("−1") { adjustReps(-1) }
+                    Button("＋1") { adjustReps(1) }
+                    Spacer()
+                    Button("上と同じ", action: copyRepsAbove)
+                        .disabled(rowAbove?.repsValue == nil)
+                    Button("次へ", action: moveToNextField)
+                }
+            }
+            if case .intensity = focus {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("次へ", action: moveToNextField)
+                }
             }
         }
+        .dismissesKeyboardOnTapOutside()
         .sheet(isPresented: $isChoosingDate) {
             DateTimeSheet(date: performedAt, timeZone: record?.timeZone ?? .current, onDone: changeDate)
         }
@@ -424,6 +443,42 @@ struct RecordView: View {
         guard let i = focusedIndex else { return }
         rows[i].reps = String(max(1, (rows[i].repsValue ?? 0) + delta))
         persist(i)
+    }
+
+    private func copyWeightAbove() {
+        guard let i = focusedIndex, let above = rowAbove?.weightValue else { return }
+        rows[i].weight = Format.weight(above)
+        persist(i)
+    }
+
+    private func copyRepsAbove() {
+        guard let i = focusedIndex, let above = rowAbove?.repsValue else { return }
+        rows[i].reps = String(above)
+        persist(i)
+    }
+
+    /// 重さ → 回数 → 強度（出しているときだけ）→ 次の行の重さ、の順に次の欄へ移る。
+    /// 最後の行の最後の欄では、空の行を足して、その行の重さへ移る。セットを続けて打つときに、欄を押し直さずに済むようにするため
+    private func moveToNextField() {
+        guard let focus, let i = focusedIndex else { return }
+        switch focus {
+        case .weight(let id):
+            self.focus = .reps(id)
+        case .reps(let id) where intensity != .none:
+            self.focus = .intensity(id)
+        case .reps, .intensity:
+            if i + 1 < rows.count {
+                self.focus = .weight(rows[i + 1].id)
+            } else {
+                addRow()
+            }
+        }
+    }
+
+    /// 打っている行の 1 つ上の行。同じ重さや回数でセットを続けるときに写す元
+    private var rowAbove: SetRow? {
+        guard let i = focusedIndex, i > 0 else { return nil }
+        return rows[i - 1]
     }
 
     private var focusedIndex: Int? {
