@@ -70,27 +70,48 @@ final class WalkthroughTests: XCTestCase {
             }
             shot("06-記録-重さ入力中")
             XCTAssertEqual(fields.element(boundBy: 0).value as? String, "100", "重さの欄に数字以外の文字が残っている")
-            fields.element(boundBy: 1).tap()
+            // 「次へ」で重さから回数の欄へ移る
+            tap(button("次へ"), "次へ 重さから回数")
             fields.element(boundBy: 1).typeText("5x")
             shot("07-記録-1セット目")
             XCTAssertEqual(fields.element(boundBy: 1).value as? String, "5", "回数の欄に数字以外の文字が残っている")
         } else {
             XCTFail("重さと回数の欄が無い")
         }
+        // 回数の欄では、重さのボタンを出さない
+        XCTAssertFalse(button("＋2.5").exists, "回数の欄で重さのボタンが出ている")
+        fields.element(boundBy: 0).tap()
         tap(button("＋2.5"), "＋2.5")
         shot("08-記録-＋2.5")
-        tap(button("閉じる"), "閉じる")
         tap(button("＋ セットを追加"), "セットを追加 2 回目")
         if fields.count >= 4 {
-            fields.element(boundBy: 2).tap()
-            fields.element(boundBy: 2).typeText("102.5")
-            fields.element(boundBy: 3).tap()
+            // 2 行目の重さは「上と同じ」で 1 行目から写す
+            tap(button("上と同じ"), "上と同じ")
+            XCTAssertEqual(fields.element(boundBy: 2).value as? String, "102.5", "上の行の重さが写らない")
+            tap(button("次へ"), "次へ 重さから回数")
             fields.element(boundBy: 3).typeText("5")
+            XCTAssertEqual(fields.element(boundBy: 3).value as? String, "5", "「次へ」で回数の欄へ移らない")
+            // 回数の次は RPE の欄
+            tap(button("次へ"), "次へ 回数から RPE")
+            let intensityFields = app.textFields.matching(identifier: "強度")
+            intensityFields.element(boundBy: 1).typeText("8")
+            XCTAssertEqual(intensityFields.element(boundBy: 1).value as? String, "8", "「次へ」で RPE の欄へ移らない")
+            XCTAssertFalse(button("上と同じ").exists, "RPE の欄で「上と同じ」が出ている")
+            // 打っている欄の上の余白を押しても、キーボードは閉じない
+            intensityFields.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
+                .withOffset(CGVector(dx: 0, dy: -6)).tap()
+            sleep(1)
+            XCTAssertTrue(app.keyboards.firstMatch.exists, "打っている欄の余白を押すと、キーボードが閉じる")
+            shot("09-記録-2セット目")
+            // 最後の行の最後の欄では、空の行を足して、その行の重さへ移る
+            tap(button("次へ"), "次へ 最後の欄")
+            XCTAssertTrue(fields.element(boundBy: 4).waitForExistence(timeout: 3), "最後の欄の「次へ」で行が増えない")
+            fields.element(boundBy: 4).typeText("60")
+            XCTAssertEqual(fields.element(boundBy: 4).value as? String, "60", "足した行の重さの欄へ移らない")
         } else {
             XCTFail("2 行目の重さと回数の欄が無い")
         }
-        shot("09-記録-2セット目")
-        if button("閉じる").exists { button("閉じる").tap() }
+        app.closeKeyboard()
 
         tap(app.buttons.matching(NSPredicate(format: "label CONTAINS '▾'")).firstMatch, "日付")
         sleep(2)

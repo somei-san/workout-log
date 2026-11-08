@@ -48,12 +48,11 @@ extension XCUIApplication {
         delete.tap()
     }
 
-    /// キーボードの上の「閉じる」で、キーボードを閉じる。キーボードが出ていなければ何もしない
+    /// 記録の画面の上の「前回」の行を押して、キーボードを閉じる。入力欄の外を押すと閉じるため
     func closeKeyboard() {
-        let close = buttons["閉じる"]
-        if close.waitForExistence(timeout: 2) {
-            close.tap()
-        }
+        guard keyboards.firstMatch.waitForExistence(timeout: 2) else { return }
+        staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "前回")).firstMatch.tap()
+        XCTAssertTrue(keyboards.firstMatch.waitForNonExistence(timeout: 5), "入力欄の外を押してもキーボードが閉じない")
     }
 
     /// ホームの種目のカード
