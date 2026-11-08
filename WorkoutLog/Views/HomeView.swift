@@ -96,6 +96,8 @@ struct HomeView: View {
                     AnalysisView(exerciseId: exerciseId)
                 case .settings:
                     SettingsView()
+                case .csvImport:
+                    CSVImportView()
                 }
             }
             .sheet(isPresented: $isAdding) {

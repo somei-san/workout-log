@@ -30,6 +30,7 @@ struct SettingsView: View {
             }
             Section("データ") {
                 Button("データを書き出す (CSV)", action: export)
+                NavigationLink("データを読み込む (CSV)", value: Route.csvImport)
             }
         }
         .navigationTitle("設定")

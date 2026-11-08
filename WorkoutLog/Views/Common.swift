@@ -43,4 +43,5 @@ enum Route: Hashable {
     case newRecord(exerciseId: Int64, token: UUID)
     case analysis(exerciseId: Int64)
     case settings
+    case csvImport
 }

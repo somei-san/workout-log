@@ -14,17 +14,26 @@ enum CSVExport {
         var lines = [header]
         for record in records {
             guard let exercise = exercises[record.exerciseId] else { continue }
-            let date = Format.date(record.performedAt, timeZone: record.timeZone)
-            let time = Format.date(record.performedAt, timeZone: record.timeZone, time: true).suffix(5)
+            let (date, time) = dateAndTime(record)
             for (i, set) in (setsByRecord[record.id!] ?? []).enumerated() {
                 lines.append([
-                    exercise.name, exercise.part.label, date, String(time), "\(i + 1)",
+                    exercise.name, exercise.part.label, date, time, "\(i + 1)",
                     Format.weight(set.weight), "\(set.reps)",
                     set.rpe.map(Format.weight) ?? "", set.rir.map(String.init) ?? "", record.memo,
                 ])
             }
         }
-        return lines.map { $0.map(escape).joined(separator: ",") }.joined(separator: "\r\n") + "\r\n"
+        return text(lines)
+    }
+
+    /// 記録した場所の時刻での、記録の日付(2026/11/07)と時刻(19:30)
+    static func dateAndTime(_ record: WorkoutRecord) -> (date: String, time: String) {
+        let dateTime = Format.date(record.performedAt, timeZone: record.timeZone, time: true)
+        return (String(dateTime.prefix(10)), String(dateTime.suffix(5)))
+    }
+
+    static func text(_ lines: [[String]]) -> String {
+        lines.map { $0.map(escape).joined(separator: ",") }.joined(separator: "\r\n") + "\r\n"
     }
 
     /// カンマ・ダブルクォート・改行を含む値は、ダブルクォートで囲む
