@@ -9,6 +9,9 @@ packages:
   GRDB:
     url: https://github.com/groue/GRDB.swift
     from: "7.0.0"
+  SnapshotTesting:
+    url: https://github.com/pointfreeco/swift-snapshot-testing
+    from: "1.19.7"
 targets:
   WorkoutLog:
     type: application
@@ -39,13 +42,19 @@ targets:
     type: bundle.ui-testing
     platform: iOS
     sources:
-      - WorkoutLogUITests
+      # スナップショットの画像は、テストがファイルの場所から直接読むので、バンドルに入れない
+      - path: WorkoutLogUITests
+        excludes:
+          - "**/__Snapshots__"
     dependencies:
       - target: WorkoutLog
+      - package: SnapshotTesting
     settings:
       base:
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
+        # この設定が無いと、UI テストのターゲットで SnapshotTesting が読む Swift Testing を読めず、ビルドが通らない
+        TESTING_FRAMEWORK_MODULE_ALIAS_FLAGS: ""
   WorkoutLogTests:
     type: bundle.unit-test
     platform: iOS

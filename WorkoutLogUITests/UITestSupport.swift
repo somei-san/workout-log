@@ -26,6 +26,18 @@ extension XCUIApplication {
         // 入力の直後は、まだ押せる状態になっていないことがある
         XCTAssertTrue(add.wait(for: \.isEnabled, toEqual: true, timeout: 5))
         add.tap()
+        XCTAssertTrue(add.waitForNonExistence(timeout: 5), "「追加」で種目の追加のシートが閉じない")
+    }
+
+    /// 種目の記録で「＋ セットを追加」で行を足し、その行に重さと回数を入れる
+    func addSet(weight: String, reps: String) {
+        let fields = textFields.matching(identifier: "重さと回数")
+        let count = fields.count
+        buttons["＋ セットを追加"].tap()
+        XCTAssertTrue(fields.element(boundBy: count + 1).waitForExistence(timeout: 5))
+        type(weight, into: fields.element(boundBy: count))
+        type(reps, into: fields.element(boundBy: count + 1))
+        closeKeyboard()
     }
 
     /// 欄をタップして文字を打つ。
@@ -51,8 +63,12 @@ extension XCUIApplication {
     /// キーボードの上の「閉じる」で、キーボードを閉じる。キーボードが出ていなければ何もしない
     func closeKeyboard() {
         let close = buttons["閉じる"]
-        if close.waitForExistence(timeout: 2) {
-            close.tap()
+        // 押してもキーボードが閉じないことがあるので、閉じるまで押し直す
+        for _ in 0..<3 {
+            guard close.waitForExistence(timeout: 2) else { return }
+            // 見つけた直後にキーボードが閉じて、押す前に消えることがある。また、出た直後は押せない状態のことがある
+            if close.isHittable { close.tap() }
+            if close.waitForNonExistence(timeout: 3) { return }
         }
     }
 

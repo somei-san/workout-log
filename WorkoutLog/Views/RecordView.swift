@@ -71,7 +71,7 @@ struct RecordView: View {
     @State private var record: WorkoutRecord?
     /// 新しい記録で、最初のセットの前に選んだ日付と時刻
     @State private var chosenAt: Date?
-    @State private var openedAt = Date()
+    @State private var openedAt = Clock.now()
     @State private var rows: [SetRow] = []
     @State private var memo = ""
     @State private var previousSets: [WorkoutSet]?
@@ -436,7 +436,7 @@ struct RecordView: View {
     private func persist(_ i: Int) {
         let row = rows[i]
         guard let weight = row.weightValue, let reps = row.repsValue, let exerciseId = exercise?.id else { return }
-        let record = record, memo = memo, performedAt = chosenAt ?? Date()
+        let record = record, memo = memo, performedAt = chosenAt ?? Clock.now()
         let rpe = row.rpeValue, rir = row.rirValue
         do {
             let (savedRecord, savedSet) = try database.writer.write { db in
@@ -543,7 +543,7 @@ private struct DateTimeSheet: View {
     private var endOfToday: Date {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
-        let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: Date()))!
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: Clock.now()))!
         return tomorrow.addingTimeInterval(-1)
     }
 

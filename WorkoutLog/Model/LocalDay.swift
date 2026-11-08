@@ -21,7 +21,7 @@ struct LocalDay: Hashable, Comparable, Sendable {
     }
 
     static func today() -> LocalDay {
-        LocalDay(Date(), timeZone: .current)
+        LocalDay(Clock.now(), timeZone: .current)
     }
 
     /// SQL の date() と同じ形("YYYY-MM-DD")
