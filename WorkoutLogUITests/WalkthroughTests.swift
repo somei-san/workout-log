@@ -135,5 +135,10 @@ final class WalkthroughTests: XCTestCase {
 
         tap(button("設定"), "設定")
         shot("17-設定")
+
+        tap(button("データを読み込む"), "データを読み込む")
+        shot("18-CSVの読み込み")
+        app.swipeUp()
+        shot("19-CSVの読み込み-下")
     }
 }
