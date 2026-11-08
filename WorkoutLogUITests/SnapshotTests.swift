@@ -14,9 +14,9 @@ class SnapshotTests: XCTestCase {
         continueAfterFailure = true
     }
 
-    /// 空のデータベースと空の設定で、撮る条件をそろえて起動する
-    private func launch() {
-        app.launchArguments = [
+    /// 空のデータベースと空の設定で、撮る条件をそろえて起動する。arguments は、設定の値を起動引数で渡すときに使う
+    private func launch(_ arguments: [String] = []) {
+        app.launchArguments = arguments + [
             "-uiTesting",
             // 日付のシートのカレンダーは本当の今日に印を付けるので、テストを回す月と重ならない月の日にする
             "-uiTestingNow", "2026-01-15T01:00:00Z",
@@ -32,7 +32,7 @@ class SnapshotTests: XCTestCase {
     /// 今の画面を撮って、基準の画像と比べる。画像の名前の先頭に、撮った条件を付ける
     private func snapshot(_ name: String, file: StaticString = #filePath, testName: String = #function, line: UInt = #line) {
         // 画面の切り替えやキーパッドが出るアニメーションの途中で撮らないよう、画面が変わらなくなるまで待つ。
-        // カーソルが点滅している画面は変わり続けるので、待つ回数に上限を置く
+        // 変わり続ける画面でも先へ進めるよう、待つ回数に上限を置く
         var screen = XCUIScreen.main.screenshot().pngRepresentation
         for _ in 0..<10 {
             usleep(500_000)
@@ -41,10 +41,21 @@ class SnapshotTests: XCTestCase {
             screen = next
         }
         let condition = "\(Self.isDark ? "dark" : "light")-\(Self.isLargeText ? "large" : "standard")"
+        // 打った数字の色のような小さな部品の色の変化も落とす。キーパッドのガラス越しにぼかして見える部分は、
+        // 起動によって 100 画素あまりの色がわずかに変わるので、違う画素が 0.01% 未満なら通す
+        let strategy = Snapshotting<UIImage, UIImage>.image(precision: 0.9999, perceptualPrecision: 0.98)
+        // キーパッドの部分が一時的に違って写ることがある。一致しなければ 10 回まで撮り直し、どれも一致しないときだけ落とす
+        for _ in 0..<10 {
+            let failure = verifySnapshot(
+                of: UIImage(data: screen)!, as: strategy, named: "\(condition)-\(name)", record: .never,
+                file: file, testName: testName, line: line
+            )
+            if failure == nil { return }
+            usleep(500_000)
+            screen = XCUIScreen.main.screenshot().pngRepresentation
+        }
         assertSnapshot(
-            of: UIImage(data: screen)!,
-            as: .image(precision: 0.999, perceptualPrecision: 0.98),
-            named: "\(condition)-\(name)",
+            of: UIImage(data: screen)!, as: strategy, named: "\(condition)-\(name)",
             file: file, testName: testName, line: line
         )
     }
@@ -88,16 +99,6 @@ class SnapshotTests: XCTestCase {
         app.addExercise("スクワット", part: "足")
         snapshot("2-exercises")
 
-        // 別の画面から戻ったあとは、「部位」を押しても見方が切り替わらないことがある。
-        // 見方を切り替えて撮る画面は、種目の履歴に移る前に撮る
-        // 押しても切り替わらないことがあるので、切り替わるまで押し直す
-        for _ in 0..<3 {
-            app.buttons["部位"].tap()
-            if app.staticTexts["胸"].waitForExistence(timeout: 5) { break }
-        }
-        guard app.staticTexts["胸"].exists else { return XCTFail("部位ごとの見方に切り替わらない") }
-        snapshot("3-by-part")
-
         app.card("ベンチプレス").tap()
         app.buttons["新しい記録"].tap()
         app.addSet(weight: "100", reps: "5")
@@ -106,7 +107,17 @@ class SnapshotTests: XCTestCase {
         guard app.buttons["新しい記録"].waitForExistence(timeout: 5) else { return XCTFail("種目の履歴に戻らない") }
         back()
         guard app.buttons["部位"].waitForExistence(timeout: 5) else { return XCTFail("ホームに戻らない") }
-        snapshot("4-recorded")
+        snapshot("3-recorded")
+    }
+
+    func testHomeByPart() {
+        // 「部位」を押して切り替えると、切り替えの文字と枠の描き方が起動のたびに少し変わり、
+        // 基準の画像と一致しないことがある。押さずに、部位の見方を保存した設定として渡して起動する
+        launch(["-home.mode", "part"])
+        app.addExercise("ベンチプレス", part: "胸")
+        app.addExercise("スクワット", part: "足")
+        XCTAssertTrue(app.staticTexts["胸"].waitForExistence(timeout: 5), "部位ごとの見方で開かない")
+        snapshot("1-by-part")
     }
 
     func testExerciseForm() {
@@ -202,6 +213,15 @@ class SnapshotTests: XCTestCase {
         button("設定").tap()
         XCTAssertTrue(app.buttons["BackButton"].firstMatch.waitForExistence(timeout: 5), "設定の画面に移らない")
         snapshot("1-settings")
+
+        button("データを読み込む").tap()
+        XCTAssertTrue(app.navigationBars["CSV の読み込み"].waitForExistence(timeout: 5), "CSV の読み込みの画面に移らない")
+        snapshot("2-csv-import")
+
+        // 一番下まで送る。文字が大きいと画面が長いので、下に着いた後も余分に送る
+        for _ in 0..<6 { app.swipeUp() }
+        XCTAssertTrue(app.buttons["ファイルを選んで読み込む"].isHittable, "CSV の読み込みの画面の下まで送れない")
+        snapshot("3-csv-import-bottom")
     }
 }
 

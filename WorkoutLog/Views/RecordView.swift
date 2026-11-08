@@ -124,6 +124,7 @@ struct RecordView: View {
             Section("メモ") {
                 if isEditing {
                     TextField("メモ", text: $memo, axis: .vertical)
+                        .cursorHiddenInUITests()
                         .onChange(of: memo) { saveMemo() }
                 } else {
                     Text(memo)
@@ -281,6 +282,7 @@ struct RecordView: View {
                     .multilineTextAlignment(alignment)
                     .monospacedDigit()
                     .foregroundStyle(focus == field ? Color.accentColor : .primary)
+                    .cursorHiddenInUITests()
                     .accessibilityIdentifier(field.accessibilityIdentifier)
             }
             .frame(minHeight: 44)

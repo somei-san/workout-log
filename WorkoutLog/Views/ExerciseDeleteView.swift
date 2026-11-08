@@ -32,6 +32,7 @@ struct ExerciseDeleteView: View {
                         TextField("", text: $confirmation)
                             .textFieldStyle(.roundedBorder)
                             .autocorrectionDisabled()
+                            .cursorHiddenInUITests()
                     }
                     Button(role: .destructive, action: delete) {
                         Text("この種目を削除する")
