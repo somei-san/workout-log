@@ -85,18 +85,17 @@ final class WalkthroughTests: XCTestCase {
         shot("08-記録-＋2.5")
         tap(button("＋ セットを追加"), "セットを追加 2 回目")
         if fields.count >= 4 {
-            // 2 行目の重さは「上と同じ」で 1 行目から写す
-            tap(button("上と同じ"), "上と同じ")
+            // 2 行目の重さは「前回と同じ」で 1 行目から写し、そのまま回数の欄へ移る
+            tap(button("前回と同じ"), "前回と同じ")
             XCTAssertEqual(fields.element(boundBy: 2).value as? String, "102.5", "上の行の重さが写らない")
-            tap(button("次へ"), "次へ 重さから回数")
             fields.element(boundBy: 3).typeText("5")
-            XCTAssertEqual(fields.element(boundBy: 3).value as? String, "5", "「次へ」で回数の欄へ移らない")
+            XCTAssertEqual(fields.element(boundBy: 3).value as? String, "5", "「前回と同じ」で回数の欄へ移らない")
             // 回数の次は RPE の欄
             tap(button("次へ"), "次へ 回数から RPE")
             let intensityFields = app.textFields.matching(identifier: "強度")
             intensityFields.element(boundBy: 1).typeText("8")
             XCTAssertEqual(intensityFields.element(boundBy: 1).value as? String, "8", "「次へ」で RPE の欄へ移らない")
-            XCTAssertFalse(button("上と同じ").exists, "RPE の欄で「上と同じ」が出ている")
+            XCTAssertFalse(button("前回と同じ").exists, "RPE の欄で「前回と同じ」が出ている")
             // 打っている欄の上の余白を押しても、キーボードは閉じない
             intensityFields.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
                 .withOffset(CGVector(dx: 0, dy: -6)).tap()
@@ -108,6 +107,19 @@ final class WalkthroughTests: XCTestCase {
             XCTAssertTrue(fields.element(boundBy: 4).waitForExistence(timeout: 3), "最後の欄の「次へ」で行が増えない")
             fields.element(boundBy: 4).typeText("60")
             XCTAssertEqual(fields.element(boundBy: 4).value as? String, "60", "足した行の重さの欄へ移らない")
+            // 打っている欄は、キーボードの上のボタンの並びより上に出る
+            XCTAssertLessThan(fields.element(boundBy: 4).frame.maxY, button("次へ").frame.minY, "打っている欄がボタンに隠れる")
+            shot("09b-記録-足した行")
+            // メモを打つときも、欄がキーボードに隠れない
+            let memo = app.textFields["メモ"]
+            tap(memo, "メモ")
+            memo.typeText("メモ")
+            // 数字のキーパッドから文字のキーボードに替わり、大きさが変わり終えてから送るので、送り終えるまで待つ
+            let keyboard = app.keyboards.firstMatch
+            let memoAboveKeyboard = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in memo.frame.maxY < keyboard.frame.minY }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [memoAboveKeyboard], timeout: 3), .completed, "メモの欄がキーボードに隠れる")
+            shot("09c-記録-メモ")
         } else {
             XCTFail("2 行目の重さと回数の欄が無い")
         }
