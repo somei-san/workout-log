@@ -35,6 +35,21 @@ struct PartIcon: View {
     }
 }
 
+extension View {
+    /// UI テストでは、入力欄のカーソルを透明にする。
+    /// 点滅するカーソルは撮るたびに写り方が変わり、見た目の回帰テストで基準の画像と一致しないため
+    @ViewBuilder
+    func cursorHiddenInUITests() -> some View {
+        if isUITesting {
+            tint(.clear)
+        } else {
+            self
+        }
+    }
+}
+
+private let isUITesting = ProcessInfo.processInfo.arguments.contains("-uiTesting")
+
 /// 画面の移動先
 enum Route: Hashable {
     case history(exerciseId: Int64)

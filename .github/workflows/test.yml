@@ -25,14 +25,10 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
-      # ランナーに入っている iOS 27.0 のシミュレーターを使う
+      # スナップショットを手元と同じ条件で比べるため、手元で撮るときと同じスクリプトで
+      # iOS 27.0 の iPhone 17 の専用のシミュレーターを用意する
       - name: シミュレーターを起動する
-        run: |
-          udid=$(xcrun simctl list devices available -j \
-            | jq -r '.devices["com.apple.CoreSimulator.SimRuntime.iOS-27-0"][] | select(.name == "iPhone 17") | .udid')
-          echo "SIMULATOR_ID=$udid" >> "$GITHUB_ENV"
-          xcrun simctl boot "$udid"
-          xcrun simctl bootstatus "$udid" -b
+        run: echo "SIMULATOR_ID=$(scripts/vrt-simulator.sh)" >> "$GITHUB_ENV"
 
       - name: ビルドする
         run: >
@@ -57,9 +53,15 @@ jobs:
           -only-testing:WorkoutLogTests
           -resultBundlePath results/unit.xcresult
 
-      # 失敗したテストを 1 回だけ回し直す。アプリの起動が止まって落ちたときの備え
+      # 失敗したテストを 1 回だけ回し直す。アプリの起動が止まって落ちたときの備え。
+      # 基準の画像が無いスナップショットは、記録せずに失敗させる。記録すると、回し直しで通ってしまうため
       - name: UI テスト
         if: ${{ !cancelled() }}
+        # 多くのスナップショットが合わないと、回し直しで時間がかかる。ジョブの上限の 60 分で打ち切られると
+        # テスト結果を残す段階も走らないので、その前に UI テストだけを止める
+        timeout-minutes: 40
+        env:
+          TEST_RUNNER_SNAPSHOT_TESTING_RECORD: never
         run: >
           xcodebuild test-without-building
           -project WorkoutLog.xcodeproj -scheme WorkoutLog
@@ -69,7 +71,8 @@ jobs:
           -resultBundlePath results/ui.xcresult
 
       - name: テスト結果を残す
-        if: ${{ failure() }}
+        # UI テストが上限の時間で止められたときも残す。failure() だけでは、止められたときに走らないことがある
+        if: ${{ !success() }}
         uses: actions/upload-artifact@v7
         with:
           name: xcresult

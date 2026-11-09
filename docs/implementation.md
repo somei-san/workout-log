@@ -76,6 +76,35 @@ App アイコンと部位の形は、`scripts/make-icons.swift` が CoreGraphics
   - 署名のチームの ID は、リポジトリの直下に `Local.xcconfig` を作って `DEVELOPMENT_TEAM = <チームの ID>` と書く。git では追跡せず、`Signing.xcconfig` から読む。
   - 無料のアカウントでは、入れたアプリが 7 日で起動できなくなり、Xcode から入れ直す([Apple Developer Forums](https://developer.apple.com/forums/thread/71283) の回答による。Apple の公式ドキュメントでは確かめていない)。
 
+## 見た目の回帰テスト
+
+各画面を UI テスト（`WorkoutLogUITests/SnapshotTests.swift`）で撮り、[swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) で基準の画像（`WorkoutLogUITests/__Snapshots__/`）と比べる。キーボードとシートも写すため、ビューを直接描かずに、シミュレーターの画面を撮る。
+
+- 撮る条件: ライトとダーク × 標準と XXXL の文字サイズの 4 通り。XXXL は、アクセシビリティの設定を使わずに選べる中で一番大きい文字サイズ。
+  - ダークは、起動引数 `-uiTestingDark YES` でアプリの画面をダークにする。iOS 27.0 のシミュレーターでは、外観の設定をダークにしてもアプリに届かないことがあるため。
+- ホームの並べ替えのメニューと長押しのメニューは撮らない。開くたびにメニューの位置が数ピクセルずれることと、外を押しても閉じないことがあるため。
+- ホームの部位の見方は、「部位」を押さずに、起動引数 `-home.mode part` で開いて撮る。押して切り替えると、切り替えの文字と枠の描き方が起動のたびに少し変わるため。
+- 撮るたびに見た目が変わらないよう、次のものを固定する。
+  - 今の時刻。起動引数 `-uiTestingNow` で渡す。
+  - タイムゾーン: 日本時間。
+  - 言語: 日本語。
+  - ステータスバーの表示。
+  - 入力欄のカーソル。UI テストでは透明にする。点滅して、撮るたびに写り方が変わるため。
+- 撮る端末: `scripts/vrt-simulator.sh` が作る、iOS 27.0 の iPhone 17 の専用のシミュレーター。手元と CI のどちらもこのスクリプトで用意する。別のシミュレーターでは画像が一致せず、落ちることがある。
+- 比べ方: 違う画素が 0.01% 未満で、どの画素も見た目でほぼ同じ色なら一致とする。キーパッドのガラス越しにぼかして見える部分の色が、起動によってわずかに変わるため。一致しなければ 10 回まで撮り直し、どれも一致しないときだけ落とす。キーパッドの部分が一時的に違って写ることがあるため。
+  - ステータスバーの部分は、比べる前に塗りつぶす。時刻の表示を固定しても、手元と CI で時刻の部分の画素が違うため。
+- CI: 基準の画像と一致しない画面があると落ちる。基準の画像との差分の画像は、CI の成果物の xcresult に入る。
+- 意図して見た目を変えたときは、手元で違いの出た画像を撮り直してコミットする。
+
+  ```sh
+  udid=$(scripts/vrt-simulator.sh)
+  TEST_RUNNER_SNAPSHOT_TESTING_RECORD=failed xcodebuild test \
+    -project WorkoutLog.xcodeproj -scheme WorkoutLog -destination "id=$udid" \
+    -only-testing:WorkoutLogUITests
+  ```
+
+  画面を足したときは、環境変数を付けずに回しても、基準の画像が無い画面だけが記録される（記録した回のテストは落ちる）。
+
 ## 実装の順番
 
 1. Xcode のプロジェクトを作り、GRDB を Swift Package Manager で入れる

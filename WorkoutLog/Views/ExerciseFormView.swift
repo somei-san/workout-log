@@ -14,6 +14,7 @@ struct ExerciseFormView: View {
             Form {
                 Section("名前") {
                     TextField("例: ベンチプレス", text: $exercise.name)
+                        .cursorHiddenInUITests()
                 }
                 Section("部位") {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {

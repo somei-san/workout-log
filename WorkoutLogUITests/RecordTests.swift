@@ -16,18 +16,7 @@ final class RecordTests: XCTestCase {
         app.card("懸垂").tap()
         app.buttons["新しい記録"].tap()
         XCTAssertTrue(app.buttons["＋ セットを追加"].waitForExistence(timeout: 5))
-        addSet(weight: "20", reps: "8")
-    }
-
-    /// 「＋ セットを追加」で行を足し、その行に重さと回数を入れる
-    private func addSet(weight: String, reps: String) {
-        let fields = app.textFields.matching(identifier: "重さと回数")
-        let count = fields.count
-        app.buttons["＋ セットを追加"].tap()
-        XCTAssertTrue(fields.element(boundBy: count + 1).waitForExistence(timeout: 5))
-        app.type(weight, into: fields.element(boundBy: count))
-        app.type(reps, into: fields.element(boundBy: count + 1))
-        app.closeKeyboard()
+        app.addSet(weight: "20", reps: "8")
     }
 
     func test最後のセットを消すときは確認を出し_記録ごと消して履歴に戻る() {
@@ -94,7 +83,7 @@ final class RecordTests: XCTestCase {
 
     func test履歴に戻ると記録の値が出て_次の記録では前回として出る() {
         recordOneSet()
-        addSet(weight: "20", reps: "8")
+        app.addSet(weight: "20", reps: "8")
         app.buttons["BackButton"].firstMatch.tap()
         // ボリューム / 推定 1RM / 最大重量
         XCTAssertTrue(app.staticTexts["320 / 24.8 / 20.0"].waitForExistence(timeout: 5))
