@@ -57,6 +57,9 @@ jobs:
       # 基準の画像が無いスナップショットは、記録せずに失敗させる。記録すると、回し直しで通ってしまうため
       - name: UI テスト
         if: ${{ !cancelled() }}
+        # 多くのスナップショットが合わないと、回し直しで時間がかかる。ジョブの上限の 60 分で打ち切られると
+        # テスト結果を残す段階も走らないので、その前に UI テストだけを止める
+        timeout-minutes: 40
         env:
           TEST_RUNNER_SNAPSHOT_TESTING_RECORD: never
         run: >
@@ -68,7 +71,8 @@ jobs:
           -resultBundlePath results/ui.xcresult
 
       - name: テスト結果を残す
-        if: ${{ failure() }}
+        # UI テストが上限の時間で止められたときも残す。failure() だけでは、止められたときに走らないことがある
+        if: ${{ !success() }}
         uses: actions/upload-artifact@v7
         with:
           name: xcresult
