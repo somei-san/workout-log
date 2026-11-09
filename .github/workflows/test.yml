@@ -43,6 +43,15 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
+      # 依存のパッケージを毎回 GitHub から取ると 2.5 分かかるので、取ったものを残して使い回す。
+      # 版は Package.resolved で固定していないので、使い回すときも、xcodebuild が新しい版が無いかを確かめる
+      - name: 依存のパッケージを使い回す
+        uses: actions/cache@v6
+        with:
+          path: build/SourcePackages
+          key: spm-${{ hashFiles('project.yml') }}
+          restore-keys: spm-
+
       # シミュレーターの起動に 3 分、ビルドに 4.5 分かかるので、同時に進める。
       # テストを回すシミュレーターは、スナップショットを手元と同じ条件で比べるため、手元で撮るときと同じスクリプトで
       # iOS 27.0 の iPhone 17 の専用のものを用意する。ビルドの結果は同じ iOS のどのシミュレーターでも動くので、
