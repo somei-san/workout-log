@@ -12,9 +12,27 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # 1 台のシミュレーターで全部を回すと 30 分かかるので、テストを 5 つのジョブに分けて、別々の runner で同時に回す。
+  # テストの時間がどのジョブも 7 分前後になるように分けている。テストを足して偏ったら、分け方を見直す
   test:
+    name: test (${{ matrix.name }})
     runs-on: xcode-27
-    timeout-minutes: 60
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 単体と操作
+            unit: true
+            ui: -only-testing:WorkoutLogUITests/ExerciseTests -only-testing:WorkoutLogUITests/RecordTests
+          - name: 通しと見た目のライト・標準
+            ui: -only-testing:WorkoutLogUITests/WalkthroughTests -only-testing:WorkoutLogUITests/SnapshotTests
+          - name: 見た目のダーク・標準
+            ui: -only-testing:WorkoutLogUITests/DarkSnapshotTests
+          - name: 見た目のライト・XXXL
+            ui: -only-testing:WorkoutLogUITests/LargeTextSnapshotTests
+          - name: 見た目のダーク・XXXL
+            ui: -only-testing:WorkoutLogUITests/DarkLargeTextSnapshotTests
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
     steps:
@@ -25,16 +43,19 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
-      # スナップショットを手元と同じ条件で比べるため、手元で撮るときと同じスクリプトで
-      # iOS 27.0 の iPhone 17 の専用のシミュレーターを用意する
-      - name: シミュレーターを起動する
-        run: echo "SIMULATOR_ID=$(scripts/vrt-simulator.sh)" >> "$GITHUB_ENV"
-
-      - name: ビルドする
-        run: >
-          xcodebuild build-for-testing
-          -project WorkoutLog.xcodeproj -scheme WorkoutLog
-          -destination "id=$SIMULATOR_ID" -derivedDataPath build
+      # シミュレーターの起動に 3 分、ビルドに 4.5 分かかるので、同時に進める。
+      # テストを回すシミュレーターは、スナップショットを手元と同じ条件で比べるため、手元で撮るときと同じスクリプトで
+      # iOS 27.0 の iPhone 17 の専用のものを用意する。ビルドの結果は同じ iOS のどのシミュレーターでも動くので、
+      # ビルドの宛先には、起動を待たずに指せるランナーに入っている iPhone 17 を使う
+      - name: シミュレーターを起動しながらビルドする
+        run: |
+          scripts/vrt-simulator.sh > "$RUNNER_TEMP/simulator-id" &
+          simulator=$!
+          xcodebuild build-for-testing \
+            -project WorkoutLog.xcodeproj -scheme WorkoutLog \
+            -destination "platform=iOS Simulator,OS=27.0,name=iPhone 17" -derivedDataPath build
+          wait "$simulator"
+          echo "SIMULATOR_ID=$(< "$RUNNER_TEMP/simulator-id")" >> "$GITHUB_ENV"
 
       # 手元の iOS 27.2 のシミュレーターでは、起動した直後に UI テストのアプリの起動が数分止まって
       # 失敗することがあった。その備えに、先に一度アプリを起動しておく
@@ -46,6 +67,7 @@ jobs:
           xcrun simctl terminate "$SIMULATOR_ID" io.github.somei-san.WorkoutLog
 
       - name: 単体テスト
+        if: ${{ matrix.unit }}
         run: >
           xcodebuild test-without-building
           -project WorkoutLog.xcodeproj -scheme WorkoutLog
@@ -57,16 +79,16 @@ jobs:
       # 基準の画像が無いスナップショットは、記録せずに失敗させる。記録すると、回し直しで通ってしまうため
       - name: UI テスト
         if: ${{ !cancelled() }}
-        # 多くのスナップショットが合わないと、回し直しで時間がかかる。ジョブの上限の 60 分で打ち切られると
+        # 多くのスナップショットが合わないと、回し直しで時間がかかる。ジョブの上限の時間で打ち切られると
         # テスト結果を残す段階も走らないので、その前に UI テストだけを止める
-        timeout-minutes: 40
+        timeout-minutes: 25
         env:
           TEST_RUNNER_SNAPSHOT_TESTING_RECORD: never
         run: >
           xcodebuild test-without-building
           -project WorkoutLog.xcodeproj -scheme WorkoutLog
           -destination "id=$SIMULATOR_ID" -derivedDataPath build
-          -only-testing:WorkoutLogUITests
+          ${{ matrix.ui }}
           -retry-tests-on-failure -test-iterations 2
           -resultBundlePath results/ui.xcresult
 
@@ -75,5 +97,5 @@ jobs:
         if: ${{ !success() }}
         uses: actions/upload-artifact@v7
         with:
-          name: xcresult
+          name: xcresult-${{ strategy.job-index }}
           path: results/
