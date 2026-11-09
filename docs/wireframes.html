@@ -90,10 +90,11 @@
   .pad { flex: none; background: #f2f2f6; border-top: 1px solid var(--line); padding: 8px; display: none; }
   .pad.open { display: block; }
   .pad .adj { display: flex; gap: 6px; margin-bottom: 6px; }
-  .pad .adj button { flex: 1; min-height: 44px; border-radius: 8px; border: 0; background: #dcdce2; font-size: 15px; font-weight: 600; }
+  .pad .adj button { min-height: 36px; padding: 0 12px; border-radius: 18px; border: 0; background: #dcdce2; font-size: 15px; font-weight: 600; }
+  .pad .adj button:disabled { opacity: .4; }
+  .pad .adj .next { margin-left: auto; }
   .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .keys button { min-height: 48px; border: 0; border-radius: 8px; background: #fff; font-size: 20px; }
-  .keys .ok { background: var(--accent); color: #fff; }
   /* 種目の履歴 */
   .colhead { flex: none; padding: 8px 14px; font-size: 12px; color: var(--muted); background: #f8f8fa; border-bottom: 1px solid var(--line); }
   .hrow { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 52px; border: 0; border-bottom: 1px solid var(--line); background: none; padding: 0 14px; font-size: 16px; text-align: left; }
@@ -341,7 +342,7 @@
         <div class="prev" id="prev">前回  135kg×5 / 125kg×5×2</div>
         <div class="scroll" id="sets"></div>
         <div class="pad" id="pad">
-          <div class="adj"><button data-d="-2.5">−2.5</button><button data-d="2.5">＋2.5</button><button data-d="-1">−1</button><button data-d="1">＋1</button></div>
+          <div class="adj" id="adj"></div>
           <div class="keys" id="keys"></div>
         </div>
         <div class="menu" id="recCal"></div>
@@ -780,19 +781,37 @@ function renderSets() {
   $('#addSet').onclick = () => { newSet(); renderSets(); $('#sets').scrollTop = 1e5; };
 }
 /* キーパッド */
-function openPad(i, f) { focus = { i, f }; buf = ''; $('#pad').classList.add('open'); renderSets(); }
+function openPad(i, f) { focus = { i, f }; buf = ''; $('#pad').classList.add('open'); renderAdj(); renderSets(); }
 function closePad() { focus = null; $('#pad').classList.remove('open'); }
-$('#keys').innerHTML = ['1','2','3','4','5','6','7','8','9','.','0','完了'].map((k) => `<button class="${k === '完了' ? 'ok' : ''}">${k}</button>`).join('');
+/* キーパッドの上には、打っている欄に効くボタンだけを出す。強度とメモの欄はキーパッドを使わないので、ここには出ない */
+function renderAdj() {
+  const d = focus.f === 'w' ? 2.5 : 1, above = sets[focus.i - 1];
+  $('#adj').innerHTML = `<button data-a="same" ${above && above[focus.f] != null ? '' : 'disabled'}>前回と同じ</button>`
+    + `<button data-d="${-d}">−${d}</button><button data-d="${d}">＋${d}</button><button class="next" data-a="next">次へ</button>`;
+  $('#adj').querySelectorAll('button').forEach((b) => b.onclick = () => {
+    if (b.dataset.a === 'same') { setVal(above[focus.f]); nextField(); return; } // 写したら次の欄へ移る
+    if (b.dataset.a === 'next') { nextField(); return; }
+    setVal(Math.max(0, +sets[focus.i][focus.f] + +b.dataset.d));
+  });
+}
+/* 重さ → 回数 → 強度(出しているときだけ)→ 次の行の重さ。最後の行の最後の欄では、空の行を足してその行の重さへ移る */
+function nextField() {
+  const { i, f } = focus;
+  if (f === 'w') { openPad(i, 'r'); return; }
+  if (cfg.intensity !== 'none') { closePad(); renderSets(); document.querySelector(`[data-rpe="${i}"]`).focus(); return; }
+  if (i + 1 === sets.length) newSet();
+  openPad(i + 1, 'w');
+}
+$('#keys').innerHTML = ['1','2','3','4','5','6','7','8','9','.','0','⌫'].map((k) => `<button>${k}</button>`).join('');
 document.querySelectorAll('#keys button').forEach((b) => b.onclick = () => {
   if (!focus) return;
-  if (b.textContent === '完了') { closePad(); renderSets(); return; }
-  buf += b.textContent; setVal(parseFloat(buf) || 0);
+  buf = b.textContent === '⌫' ? buf.slice(0, -1) : buf + b.textContent;
+  setVal(buf === '' ? null : parseFloat(buf) || 0);
 });
-document.querySelectorAll('#pad .adj button').forEach((b) => b.onclick = () => {
-  if (!focus) return;
-  const s = sets[focus.i], d = +b.dataset.d, isW = Math.abs(d) === 2.5;
-  if (isW !== (focus.f === 'w')) return; // ±2.5 は重さ、±1 は回数にだけ効く
-  setVal(Math.max(0, +s[focus.f] + d));
+// キーパッドを閉じるボタンは置かない。入力欄の外を押すと閉じる
+$('#rec').addEventListener('click', (ev) => {
+  // 押したボタンは描き直しで外れていることがあるので、押した時点の親をたどる
+  if (focus && !ev.composedPath().some((el) => el.id === 'pad' || el.classList?.contains('cell'))) { closePad(); renderSets(); }
 });
 function setVal(v) {
   sets[focus.i][focus.f] = v; renderSets();
