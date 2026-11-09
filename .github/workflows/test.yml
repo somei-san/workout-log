@@ -43,26 +43,28 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
-      # 依存のパッケージを毎回 GitHub から取ると 2.5 分かかるので、取ったものを残して使い回す。
-      # 版は Package.resolved で固定していないので、使い回すときも、xcodebuild が新しい版が無いかを確かめる
+      # 依存のパッケージを毎回 GitHub から取ると、5 つのジョブが同時に取るので 8 分ほどかかる。取ったものを残して使い回す。
+      # 使い回すときは、ビルドで -skipPackageUpdates を付けて、新しい版が無いかを GitHub に問い合わせない（問い合わせに 5 分かかった）。
+      # そのため依存の版は、キャッシュにある版のままになる。project.yml を変えたときに新しい版を取るよう、
+      # キーは project.yml だけで決め、前方一致で古いキャッシュを復元させない（restore-keys を付けない）
       - name: 依存のパッケージを使い回す
         uses: actions/cache@v6
         with:
           path: build/SourcePackages
           key: spm-${{ hashFiles('project.yml') }}
-          restore-keys: spm-
 
       # シミュレーターの起動に 3 分、ビルドに 4.5 分かかるので、同時に進める。
       # テストを回すシミュレーターは、スナップショットを手元と同じ条件で比べるため、手元で撮るときと同じスクリプトで
       # iOS 27.0 の iPhone 17 の専用のものを用意する。ビルドの結果は同じ iOS のどのシミュレーターでも動くので、
-      # ビルドの宛先には、起動を待たずに指せるランナーに入っている iPhone 17 を使う
+      # ビルドの宛先には、起動を待たずに指せる、runner に入っている iPhone 17 を使う
       - name: シミュレーターを起動しながらビルドする
         run: |
           scripts/vrt-simulator.sh > "$RUNNER_TEMP/simulator-id" &
           simulator=$!
           xcodebuild build-for-testing \
             -project WorkoutLog.xcodeproj -scheme WorkoutLog \
-            -destination "platform=iOS Simulator,OS=27.0,name=iPhone 17" -derivedDataPath build
+            -destination "platform=iOS Simulator,OS=27.0,name=iPhone 17" -derivedDataPath build \
+            -skipPackageUpdates
           wait "$simulator"
           echo "SIMULATOR_ID=$(< "$RUNNER_TEMP/simulator-id")" >> "$GITHUB_ENV"
 
