@@ -8,4 +8,6 @@ Local.xcconfig
 xcuserdata/
 DerivedData/
 .build/
+# scripts/test.sh と CI のビルドの出力
+build/
 .swiftpm/
