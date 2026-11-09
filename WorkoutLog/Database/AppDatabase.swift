@@ -56,7 +56,9 @@ extension AppDatabase {
             // UI テストは、起動のたびに空のデータベースから始める。UI テストの各回を同じ条件で始めるためと、
             // 実際の記録が入ったシミュレーターで回しても記録を書き換えないため
             if ProcessInfo.processInfo.arguments.contains("-uiTesting") {
-                return try empty()
+                let database = try empty()
+                try database.insertUITestingExercises()
+                return database
             }
             let dir = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             return try AppDatabase(DatabasePool(path: dir.appendingPathComponent("db.sqlite").path))
@@ -68,5 +70,21 @@ extension AppDatabase {
     /// メモリ上の空のデータベース
     static func empty() throws -> AppDatabase {
         try AppDatabase(DatabaseQueue())
+    }
+
+    /// UI テストで、起動引数「-uiTestingExercises <名前:部位,…>」の種目を、渡した順に入れる（部位は Part の rawValue）。
+    /// テストの準備のたびに画面の操作で種目を足すと、時間がかかるため
+    private func insertUITestingExercises() throws {
+        guard let list = UserDefaults.standard.string(forKey: "uiTestingExercises") else { return }
+        try writer.write { db in
+            for item in list.split(separator: ",") {
+                let fields = item.split(separator: ":")
+                guard fields.count == 2, let part = Part(rawValue: String(fields[1])) else {
+                    fatalError("起動引数 uiTestingExercises の書き方が違う: \(item)")
+                }
+                var exercise = Exercise(name: String(fields[0]), part: part)
+                try exercise.insert(db)
+            }
+        }
     }
 }
