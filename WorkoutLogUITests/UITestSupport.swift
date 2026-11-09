@@ -2,11 +2,19 @@ import XCTest
 
 @MainActor
 extension XCUIApplication {
-    /// 空のデータベースと空の設定で起動する。languageIsEnglish なら端末の言語を英語にする。
+    /// 空のデータベースと空の設定で起動する。exercises の種目は、起動したときから入れておく。
+    /// languageIsEnglish なら端末の言語を英語にする。
     /// 日付のシートのカレンダーの日のラベルは、アプリが日本語のロケールを指定していても英語で出たため
-    func launchEmpty(languageIsEnglish: Bool = false) {
+    func launchEmpty(languageIsEnglish: Bool = false, exercises: [(name: String, part: String)] = []) {
         launchArguments = ["-uiTesting"] + (languageIsEnglish ? ["-AppleLanguages", "(en)"] : [])
+            + Self.exerciseArguments(exercises)
         launch()
+    }
+
+    /// 種目を入れた状態で起動するための起動引数。part は部位の rawValue（chest、leg など）。
+    /// 種目を足す画面を確かめるテストでなければ、画面の操作で足すより速い
+    static func exerciseArguments(_ exercises: [(name: String, part: String)]) -> [String] {
+        exercises.isEmpty ? [] : ["-uiTestingExercises", exercises.map { "\($0.name):\($0.part)" }.joined(separator: ",")]
     }
 
     /// ホームの「＋」から、最初に並べるセット数を initialRowCount にした種目を足す。

@@ -14,9 +14,10 @@ class SnapshotTests: XCTestCase {
         continueAfterFailure = true
     }
 
-    /// 空のデータベースと空の設定で、撮る条件をそろえて起動する。arguments は、設定の値を起動引数で渡すときに使う
-    private func launch(_ arguments: [String] = []) {
-        app.launchArguments = arguments + [
+    /// 空のデータベースと空の設定で、撮る条件をそろえて起動する。arguments は、設定の値を起動引数で渡すときに使う。
+    /// exercises の種目は、起動したときから入れておく
+    private func launch(_ arguments: [String] = [], exercises: [(name: String, part: String)] = []) {
+        app.launchArguments = arguments + XCUIApplication.exerciseArguments(exercises) + [
             "-uiTesting",
             // 日付のシートのカレンダーは本当の今日に印を付けるので、テストを回す月と重ならない月の日にする
             "-uiTestingNow", "2026-01-15T01:00:00Z",
@@ -128,9 +129,7 @@ class SnapshotTests: XCTestCase {
     func testHomeByPart() {
         // 「部位」を押して切り替えると、切り替えの文字と枠の描き方が起動のたびに少し変わり、
         // 基準の画像と一致しないことがある。押さずに、部位の見方を保存した設定として渡して起動する
-        launch(["-home.mode", "part"])
-        app.addExercise("ベンチプレス", part: "胸")
-        app.addExercise("スクワット", part: "足")
+        launch(["-home.mode", "part"], exercises: [("ベンチプレス", "chest"), ("スクワット", "leg")])
         XCTAssertTrue(app.staticTexts["胸"].waitForExistence(timeout: 5), "部位ごとの見方で開かない")
         snapshot("1-by-part")
     }
@@ -151,6 +150,8 @@ class SnapshotTests: XCTestCase {
     }
 
     func testRecord() {
+        // 種目は画面の操作で足す。起動引数で入れると、文字のキーボードを一度も出さずにキーパッドを開くことになり、
+        // キーパッドの数字の書体が基準の画像と違って写った
         launch()
         app.addExercise("ベンチプレス", part: "胸")
         app.card("ベンチプレス").tap()
@@ -190,8 +191,7 @@ class SnapshotTests: XCTestCase {
     }
 
     func testDateSheet() {
-        launch()
-        app.addExercise("ベンチプレス", part: "胸")
+        launch(exercises: [("ベンチプレス", "chest")])
         app.card("ベンチプレス").tap()
         app.buttons["新しい記録"].tap()
         // 日付を押しても日付のシートが出ないことがあるので、出るまで押し直す
@@ -208,8 +208,7 @@ class SnapshotTests: XCTestCase {
     }
 
     func testHistoryAndAnalysis() {
-        launch()
-        app.addExercise("ベンチプレス", part: "胸")
+        launch(exercises: [("ベンチプレス", "chest")])
         app.card("ベンチプレス").tap()
         XCTAssertTrue(app.buttons["新しい記録"].waitForExistence(timeout: 5))
         snapshot("1-history-empty")

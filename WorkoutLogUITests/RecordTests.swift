@@ -9,10 +9,9 @@ final class RecordTests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// 種目を足し、新しい記録を開いて、重さと回数を入れた 1 セットを作る
+    /// 種目を入れて起動し、新しい記録を開いて、重さと回数を入れた 1 セットを作る
     private func recordOneSet(languageIsEnglish: Bool = false) {
-        app.launchEmpty(languageIsEnglish: languageIsEnglish)
-        app.addExercise("懸垂", part: "背中")
+        app.launchEmpty(languageIsEnglish: languageIsEnglish, exercises: [("懸垂", "back")])
         app.card("懸垂").tap()
         app.buttons["新しい記録"].tap()
         XCTAssertTrue(app.buttons["＋ セットを追加"].waitForExistence(timeout: 5))

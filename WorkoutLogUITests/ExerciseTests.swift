@@ -25,8 +25,7 @@ final class ExerciseTests: XCTestCase {
     }
 
     func test種目の削除は削除と入力するまで押せない() {
-        app.launchEmpty()
-        app.addExercise("懸垂", part: "背中")
+        app.launchEmpty(exercises: [("懸垂", "back")])
         menu("懸垂", "削除")
 
         let delete = app.buttons["この種目を削除する"]
@@ -44,9 +43,7 @@ final class ExerciseTests: XCTestCase {
     }
 
     func test非表示にした種目は非表示の種目にまとまり_再表示で戻る() {
-        app.launchEmpty()
-        app.addExercise("懸垂", part: "背中")
-        app.addExercise("ディップス", part: "胸")
+        app.launchEmpty(exercises: [("懸垂", "back"), ("ディップス", "chest")])
         menu("懸垂", "非表示")
 
         let hidden = app.buttons["非表示の種目(1)"]
