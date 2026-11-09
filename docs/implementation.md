@@ -93,7 +93,7 @@ App アイコンと部位の形は、`scripts/make-icons.swift` が CoreGraphics
 - 撮る端末: `scripts/vrt-simulator.sh` が作る、iOS 27.0 の iPhone 17 の専用のシミュレーター。手元と CI のどちらもこのスクリプトで用意する。別のシミュレーターでは画像が一致せず、落ちることがある。
 - 比べ方: 違う画素が 0.01% 未満で、どの画素も見た目でほぼ同じ色なら一致とする。キーパッドのガラス越しにぼかして見える部分の色が、起動によってわずかに変わるため。一致しなければ 10 回まで撮り直し、どれも一致しないときだけ落とす。キーパッドの部分が一時的に違って写ることがあるため。
   - ステータスバーの部分は、比べる前に塗りつぶす。時刻の表示を固定しても、手元と CI で時刻の部分の画素が違うため。
-- CI: 基準の画像と一致しない画面があると落ちる。基準の画像との差分の画像は、CI の成果物の xcresult に入る。
+- CI: 基準の画像と一致しない画面があると落ちる。基準の画像との差分の画像は、CI の成果物の xcresult に入る。CI はテストを 5 つのジョブに分け、別々の runner で同時に回す。分け方は `.github/workflows/test.yml` の `matrix` にある。
 - 意図して見た目を変えたときは、手元で違いの出た画像を撮り直してコミットする。
 
   ```sh
@@ -104,6 +104,15 @@ App アイコンと部位の形は、`scripts/make-icons.swift` が CoreGraphics
   ```
 
   画面を足したときは、環境変数を付けずに回しても、基準の画像が無い画面だけが記録される（記録した回のテストは落ちる）。
+
+- 手元で回すとき: 全部を回すと 30 分ほど Mac とシミュレーターがふさがるので、直した画面のテストだけを `-only-testing` で選ぶ。撮る条件はクラスで分かれていて、ライト・標準は `SnapshotTests`、ダークは `DarkSnapshotTests`、XXXL は `LargeTextSnapshotTests`、ダーク・XXXL は `DarkLargeTextSnapshotTests`。
+
+  ```sh
+  # 記録の画面を、ライト・標準とダーク・XXXL で撮る
+  xcodebuild test -project WorkoutLog.xcodeproj -scheme WorkoutLog -destination "id=$udid" \
+    -only-testing:WorkoutLogUITests/SnapshotTests/testRecord \
+    -only-testing:WorkoutLogUITests/DarkLargeTextSnapshotTests/testRecord
+  ```
 
 ## 実装の順番
 
