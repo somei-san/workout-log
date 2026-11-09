@@ -175,6 +175,9 @@ class SnapshotTests: XCTestCase {
         guard reps.value as? String == "5" else { return XCTFail("回数の欄が 5 にならない: \(String(describing: reps.value))") }
         snapshot("4-typing-reps")
 
+        // 「＋2.5」は重さの欄を打っているときだけ出る
+        tapEnd(of: weight)
+        guard button("＋2.5").waitForExistence(timeout: 5) else { return XCTFail("重さの欄で「＋2.5」が出ない") }
         button("＋2.5").tap()
         guard weight.value as? String == "102.5" else { return XCTFail("＋2.5 で重さが 102.5 にならない") }
         snapshot("5-plus-2.5")
