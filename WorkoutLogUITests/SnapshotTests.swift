@@ -47,7 +47,7 @@ class SnapshotTests: XCTestCase {
         // キーパッドの部分が一時的に違って写ることがある。一致しなければ 10 回まで撮り直し、どれも一致しないときだけ落とす
         for _ in 0..<10 {
             let failure = verifySnapshot(
-                of: UIImage(data: screen)!, as: strategy, named: "\(condition)-\(name)", record: .never,
+                of: hidingStatusBar(screen), as: strategy, named: "\(condition)-\(name)", record: .never,
                 file: file, testName: testName, line: line
             )
             if failure == nil { return }
@@ -55,9 +55,24 @@ class SnapshotTests: XCTestCase {
             screen = XCUIScreen.main.screenshot().pngRepresentation
         }
         assertSnapshot(
-            of: UIImage(data: screen)!, as: strategy, named: "\(condition)-\(name)",
+            of: hidingStatusBar(screen), as: strategy, named: "\(condition)-\(name)",
             file: file, testName: testName, line: line
         )
+    }
+
+    /// 画面の画像のステータスバーの部分を塗りつぶして返す。
+    /// ステータスバーの時刻は、表示を固定しても、手元と CI で画素が違うため
+    private func hidingStatusBar(_ png: Data) -> UIImage {
+        let image = UIImage(data: png)!
+        let pointsToPixels = image.size.width / UIScreen.main.bounds.width
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = image.scale
+        return UIGraphicsImageRenderer(size: image.size, format: format).image { context in
+            image.draw(at: .zero)
+            UIColor.gray.setFill()
+            // 時刻と電池の下の端までにとどめる。これより下には、記録の画面のタイトルがかかる
+            context.fill(CGRect(x: 0, y: 0, width: image.size.width, height: 44 * pointsToPixels))
+        }
     }
 
     private func button(_ label: String) -> XCUIElement {
