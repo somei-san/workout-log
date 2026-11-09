@@ -126,19 +126,18 @@ final class WalkthroughTests: XCTestCase {
         app.closeKeyboard()
 
         tap(app.buttons.matching(NSPredicate(format: "label CONTAINS '▾'")).firstMatch, "日付")
-        sleep(2)
+        let datePicker = app.datePickers.firstMatch
+        XCTAssertTrue(datePicker.waitForExistence(timeout: 5), "日付のシートが出ない")
         shot("10-日付と時刻")
         tap(button("キャンセル"), "キャンセル")
-        sleep(2)
-        if app.datePickers.firstMatch.exists {
+        if !datePicker.waitForNonExistence(timeout: 5) {
             shot("10b-キャンセルで閉じない")
             XCTFail("キャンセルで日付のシートが閉じない")
             tap(button("完了"), "完了")
-            sleep(2)
-            if app.datePickers.firstMatch.exists {
+            if !datePicker.waitForNonExistence(timeout: 5) {
                 XCTFail("完了でも日付のシートが閉じない")
                 app.swipeDown()
-                sleep(2)
+                _ = datePicker.waitForNonExistence(timeout: 5)
             }
         }
 
