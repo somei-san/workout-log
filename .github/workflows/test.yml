@@ -108,9 +108,12 @@ jobs:
           -resultBundlePath results/ui.xcresult
 
       - name: テスト結果を残す
-        # UI テストが上限の時間で止められたときも残す。failure() だけでは、止められたときに走らないことがある
-        if: ${{ !success() }}
+        # 通ったときも残す。CI でだけ、記録の画面で操作のたびにアプリのアニメーションの終わりを 60 秒待つことがあり、
+        # 遅くても通るので、残さないと遅くなった回のどの操作で待ったかを調べられない。原因が分かったら、通らなかったときだけに戻す。
+        # 上限の時間で止められたときも残すため、always() にする（failure() だけでは走らないことがある）
+        if: ${{ always() }}
         uses: actions/upload-artifact@v7
         with:
           name: xcresult-${{ strategy.job-index }}
           path: results/
+          retention-days: 3
