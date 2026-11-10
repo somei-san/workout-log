@@ -97,6 +97,9 @@ jobs:
         # 多くのスナップショットが合わないと、回し直しで時間がかかる。ジョブの上限の時間で打ち切られると
         # テスト結果を残す段階も走らないので、その前に UI テストだけを止める
         timeout-minutes: 25
+        # CI では、記録の画面で操作のたびに「App animations complete notification not received」で 60 秒ずつ
+        # 待たされ、テスト 1 件が 10 分を超えることがある。止まらなければ一番長いテストでも 3 分なので、
+        # 1 件を 5 分で打ち切り、回し直しに回す
         env:
           TEST_RUNNER_SNAPSHOT_TESTING_RECORD: never
         run: >
@@ -105,6 +108,7 @@ jobs:
           -destination "id=$SIMULATOR_ID" -derivedDataPath build
           ${{ matrix.ui }}
           -retry-tests-on-failure -test-iterations 2
+          -test-timeouts-enabled YES -default-test-execution-time-allowance 300
           -resultBundlePath results/ui.xcresult
 
       - name: テスト結果を残す
