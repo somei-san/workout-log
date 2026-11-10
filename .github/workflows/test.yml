@@ -53,20 +53,24 @@ jobs:
           path: build/SourcePackages
           key: spm-${{ hashFiles('project.yml') }}
 
-      # シミュレーターの起動に 3 分、ビルドに 4.5 分かかるので、同時に進める。
+      # ビルドの結果は同じ iOS のどのシミュレーターでも動くので、ビルドの宛先には、起動を待たずに指せる、
+      # runner に入っている iPhone 17 を使う。generic/platform=iOS Simulator にすると、テストに要らない x86_64 向けもビルドする。
+      # シミュレーターの起動と同時に進めると、ビルドの中の依存のパッケージの解決が数分待たされるので、
+      # ビルドを済ませてから起動する
+      - name: ビルドする
+        run: >
+          xcodebuild build-for-testing
+          -project WorkoutLog.xcodeproj -scheme WorkoutLog
+          -destination "platform=iOS Simulator,OS=27.0,name=iPhone 17" -derivedDataPath build
+          -skipPackageUpdates
+
       # テストを回すシミュレーターは、スナップショットを手元と同じ条件で比べるため、手元で撮るときと同じスクリプトで
-      # iOS 27.0 の iPhone 17 の専用のものを用意する。ビルドの結果は同じ iOS のどのシミュレーターでも動くので、
-      # ビルドの宛先には、起動を待たずに指せる、runner に入っている iPhone 17 を使う
-      - name: シミュレーターを起動しながらビルドする
+      # iOS 27.0 の iPhone 17 の専用のものを用意する
+      - name: シミュレーターを起動する
+        # echo の引数の中のコマンド置換では、スクリプトが失敗しても段階が止まらないので、先に変数に受ける
         run: |
-          scripts/vrt-simulator.sh > "$RUNNER_TEMP/simulator-id" &
-          simulator=$!
-          xcodebuild build-for-testing \
-            -project WorkoutLog.xcodeproj -scheme WorkoutLog \
-            -destination "platform=iOS Simulator,OS=27.0,name=iPhone 17" -derivedDataPath build \
-            -skipPackageUpdates
-          wait "$simulator"
-          echo "SIMULATOR_ID=$(< "$RUNNER_TEMP/simulator-id")" >> "$GITHUB_ENV"
+          simulator=$(scripts/vrt-simulator.sh)
+          echo "SIMULATOR_ID=$simulator" >> "$GITHUB_ENV"
 
       # 手元の iOS 27.2 のシミュレーターでは、起動した直後に UI テストのアプリの起動が数分止まって
       # 失敗することがあった。その備えに、先に一度アプリを起動しておく
