@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # 1 台のシミュレーターで全部を回すと 30 分かかるので、テストを 5 つのジョブに分けて、別々の runner で同時に回す。
+  # 1 台のシミュレーターで全部を回すと時間がかかるので、テストを 4 つのジョブに分けて、別々の runner で同時に回す。
   # テストの時間がどのジョブも 7 分前後になるように分けている。テストを足して偏ったら、分け方を見直す
   test:
     name: test (${{ matrix.name }})
@@ -27,10 +27,8 @@ jobs:
             ui: -only-testing:WorkoutLogUITests/ExerciseTests -only-testing:WorkoutLogUITests/RecordTests
           - name: 通しと見た目のライト・標準
             ui: -only-testing:WorkoutLogUITests/WalkthroughTests -only-testing:WorkoutLogUITests/SnapshotTests
-          - name: 見た目のダーク・標準
-            ui: -only-testing:WorkoutLogUITests/DarkSnapshotTests
-          - name: 見た目のライト・XXXL
-            ui: -only-testing:WorkoutLogUITests/LargeTextSnapshotTests
+          - name: 見た目のダーク・標準とライト・XXXL
+            ui: -only-testing:WorkoutLogUITests/DarkSnapshotTests -only-testing:WorkoutLogUITests/LargeTextSnapshotTests
           - name: 見た目のダーク・XXXL
             ui: -only-testing:WorkoutLogUITests/DarkLargeTextSnapshotTests
     env:

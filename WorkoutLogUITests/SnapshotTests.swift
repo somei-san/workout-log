@@ -7,11 +7,21 @@ import XCTest
 class SnapshotTests: XCTestCase {
     class var isDark: Bool { false }
     class var isLargeText: Bool { false }
+    /// 全部の画面を撮るか。UI テストの時間を減らすため、全部の画面を撮るのはライト・標準とダーク・XXXL にとどめる。
+    /// ダーク・XXXL は、ダークの色と XXXL の文字の大きさの両方を写す。ダーク・標準とライト・XXXL では、
+    /// 部品が多くて崩れやすいホームと記録の画面だけを撮る
+    // setUpWithError は main actor の外で呼ばれるので、そこから読めるよう nonisolated にする
+    nonisolated class var coversAllScreens: Bool { true }
 
     let app = XCUIApplication()
 
-    override func setUp() {
+    override func setUpWithError() throws {
         continueAfterFailure = true
+        // name は「-[WorkoutLogUITests.DarkSnapshotTests testHome]」の形
+        let screensForAllConditions = ["testHome", "testRecord"]
+        if !Self.coversAllScreens, !screensForAllConditions.contains(where: { name.hasSuffix(" \($0)]") }) {
+            throw XCTSkip("この条件では、ホームと記録の画面だけを撮る")
+        }
     }
 
     /// 空のデータベースと空の設定で、撮る条件をそろえて起動する。arguments は、設定の値を起動引数で渡すときに使う。
@@ -244,11 +254,13 @@ class SnapshotTests: XCTestCase {
 
 final class DarkSnapshotTests: SnapshotTests {
     override class var isDark: Bool { true }
+    nonisolated override class var coversAllScreens: Bool { false }
 }
 
 /// 大きい文字サイズは、アクセシビリティの設定を使わずに選べる中で一番大きいもの（XXXL）にする
 final class LargeTextSnapshotTests: SnapshotTests {
     override class var isLargeText: Bool { true }
+    nonisolated override class var coversAllScreens: Bool { false }
 }
 
 final class DarkLargeTextSnapshotTests: SnapshotTests {

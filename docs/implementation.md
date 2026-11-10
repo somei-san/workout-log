@@ -81,6 +81,7 @@ App アイコンと部位の形は、`scripts/make-icons.swift` が CoreGraphics
 各画面を UI テスト（`WorkoutLogUITests/SnapshotTests.swift`）で撮り、[swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) で基準の画像（`WorkoutLogUITests/__Snapshots__/`）と比べる。キーボードとシートも写すため、ビューを直接描かずに、シミュレーターの画面を撮る。
 
 - 撮る条件: ライトとダーク × 標準と XXXL の文字サイズの 4 通り。XXXL は、アクセシビリティの設定を使わずに選べる中で一番大きい文字サイズ。
+  - 全部の画面を撮るのは、ライト・標準とダーク・XXXL だけ。ダーク・標準とライト・XXXL では、部品が多くて崩れやすいホームと記録の画面だけを撮る。UI テストの時間を減らすため。
   - ダークは、起動引数 `-uiTestingDark YES` でアプリの画面をダークにする。iOS 27.0 のシミュレーターでは、外観の設定をダークにしてもアプリに届かないことがあるため。
 - ホームの並べ替えのメニューと長押しのメニューは撮らない。開くたびにメニューの位置が数ピクセルずれることと、外を押しても閉じないことがあるため。
 - ホームの部位の見方は、「部位」を押さずに、起動引数 `-home.mode part` で開いて撮る。押して切り替えると、切り替えの文字と枠の描き方が起動のたびに少し変わるため。
@@ -93,8 +94,8 @@ App アイコンと部位の形は、`scripts/make-icons.swift` が CoreGraphics
 - 撮る端末: `scripts/vrt-simulator.sh` が作る、iOS 27.0 の iPhone 17 の専用のシミュレーター。手元と CI のどちらもこのスクリプトで用意する。別のシミュレーターでは画像が一致せず、落ちることがある。
 - 比べ方: 違う画素が 0.01% 未満で、どの画素も見た目でほぼ同じ色なら一致とする。キーパッドのガラス越しにぼかして見える部分の色が、起動によってわずかに変わるため。一致しなければ 10 回まで撮り直し、どれも一致しないときだけ落とす。キーパッドの部分が一時的に違って写ることがあるため。
   - ステータスバーの部分は、比べる前に塗りつぶす。時刻の表示を固定しても、手元と CI で時刻の部分の画素が違うため。
-- CI: 基準の画像と一致しない画面があると落ちる。基準の画像との差分の画像は、CI の成果物の xcresult に入る。CI はテストを 5 つのジョブに分け、別々の runner で同時に回す。分け方は `.github/workflows/test.yml` の `matrix` にある。
-- 手元で回すとき: `scripts/test.sh` で回す。専用のシミュレーターを用意し、引数で選んだ UI テストだけを回す（引数が無ければ単体テストだけ）。全部を回すと 30 分ほど Mac とシミュレーターがふさがるので、直した画面のテストだけを選ぶ。撮る条件はクラスで分かれていて、ライト・標準は `SnapshotTests`、ダークは `DarkSnapshotTests`、XXXL は `LargeTextSnapshotTests`、ダーク・XXXL は `DarkLargeTextSnapshotTests`。
+- CI: 基準の画像と一致しない画面があると落ちる。基準の画像との差分の画像は、CI の成果物の xcresult に入る。CI はテストを 4 つのジョブに分け、別々の runner で同時に回す。分け方は `.github/workflows/test.yml` の `matrix` にある。
+- 手元で回すとき: `scripts/test.sh` で回す。専用のシミュレーターを用意し、引数で選んだ UI テストだけを回す（引数が無ければ単体テストだけ）。全部を回すと 30 分弱 Mac とシミュレーターがふさがるので、直した画面のテストだけを選ぶ。撮る条件はクラスで分かれていて、ライト・標準は `SnapshotTests`、ダークは `DarkSnapshotTests`、XXXL は `LargeTextSnapshotTests`、ダーク・XXXL は `DarkLargeTextSnapshotTests`。
 
   ```sh
   # 記録の画面を、ライト・標準とダーク・XXXL で撮る

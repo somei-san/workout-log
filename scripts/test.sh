@@ -5,7 +5,7 @@
 #   scripts/test.sh                                   単体テストだけ（30 秒ほど）
 #   scripts/test.sh RecordTests SnapshotTests/testRecord
 #                                                     選んだ UI テストのクラスかテストだけ（WorkoutLogUITests/ は省ける）
-#   scripts/test.sh WorkoutLogTests WorkoutLogUITests 全部（UI テストに 30 分ほどかかる）
+#   scripts/test.sh WorkoutLogTests WorkoutLogUITests 全部（UI テストに 30 分弱かかる）
 #
 # 見た目の回帰テストの画像を撮り直すときは、環境変数 TEST_RUNNER_SNAPSHOT_TESTING_RECORD=failed を付けて回す
 set -euo pipefail
