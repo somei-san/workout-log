@@ -173,11 +173,12 @@ final class RecordModel {
     }
 
     /// 行を保存する。重さと回数がそろっていない行は保存しない。
-    /// 新しい記録では、最初のセットを保存するときに 1 回の記録も作る
+    /// 新しい記録では、最初のセットを保存するときに、画面の上に出している日付と時刻で 1 回の記録も作る。
+    /// 保存した時刻で作ると、開いてから日付が変わったときに、出していた日付と違う日の記録になるため
     private func persist(_ i: Int) {
         let row = rows[i]
         guard let database, let weight = row.weightValue, let reps = row.repsValue, let exerciseId = exercise?.id else { return }
-        let record = record, memo = memo, performedAt = chosenAt ?? Clock.now()
+        let record = record, memo = memo, performedAt = performedAt
         let rpe = row.rpeValue, rir = row.rirValue
         do {
             let (savedRecord, savedSet) = try database.writer.write { db in
