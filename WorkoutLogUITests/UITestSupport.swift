@@ -71,7 +71,19 @@ extension XCUIApplication {
     /// 記録の画面の上の「前回」の行を押して、キーボードを閉じる。入力欄の外を押すと閉じるため
     func closeKeyboard() {
         guard keyboards.firstMatch.waitForExistence(timeout: 2) else { return }
+        let start = Date()
         staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "前回")).firstMatch.tap()
+        // CI で、ここで押した後に XCTest がアプリのアニメーションの終わりを待ち続け、以後の操作が毎回 60 秒待ちになって、
+        // テストが十数分かかったことがある。普段は 2 秒かからないので、30 秒を超えたら落とす。
+        // continueAfterFailure が true のテストでも止まった操作を続けないよう、アプリも終わらせる
+        if Date().timeIntervalSince(start) > 30 {
+            XCTContext.runActivity(named: "アニメーションの終わりを待って止まった画面") { activity in
+                activity.add(XCTAttachment(screenshot: XCUIScreen.main.screenshot()))
+            }
+            XCTFail("「前回」を押した後、アニメーションの終わりを待って止まった")
+            terminate()
+            return
+        }
         XCTAssertTrue(keyboards.firstMatch.waitForNonExistence(timeout: 5), "入力欄の外を押してもキーボードが閉じない")
     }
 
