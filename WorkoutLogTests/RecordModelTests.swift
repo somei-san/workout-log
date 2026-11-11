@@ -143,6 +143,20 @@ struct RecordModelTests {
         #expect(performedAt.map { abs($0.timeIntervalSince(chosen)) < 1 } == true)
     }
 
+    @Test func 日付と時刻を変えなければ_開いた時刻で記録を作る() async throws {
+        let exercise = try insertExercise(initialRowCount: 1)
+        // 開いてから日付が変わっても、画面の上に出していた日付で残す
+        let openedAt = daysAgo(1)
+        let model = RecordModel(openedAt: openedAt)
+        try await model.load(.new(exerciseId: exercise.id!), database: database)
+
+        let row = model.rows[0].id
+        model.setValue(row, \.weight, "60")
+        model.setValue(row, \.reps, "10")
+        let performedAt = try await database.reader.read { db in try WorkoutRecord.fetchOne(db)?.performedAt }
+        #expect(performedAt.map { abs($0.timeIntervalSince(openedAt)) < 1 } == true)
+    }
+
     @Test func 上の行の重さと回数を写せる_上の行が空なら写さない() async throws {
         let exercise = try insertExercise(initialRowCount: 2)
         let model = RecordModel()
