@@ -114,11 +114,12 @@ final class WalkthroughTests: XCTestCase {
             let memo = app.textFields["メモ"]
             tap(memo, "メモ")
             memo.typeText("メモ")
-            // 数字のキーパッドから文字のキーボードに替わり、大きさが変わり終えてから送るので、送り終えるまで待つ
+            // 数字のキーパッドから文字のキーボードに替わり、大きさが変わり終えてから送るので、送り終えるまで待つ。
+            // CI では 1 回確かめるのに数秒かかることがあるので、何回か確かめ直せる上限にする
             let keyboard = app.keyboards.firstMatch
             let memoAboveKeyboard = XCTNSPredicateExpectation(
                 predicate: NSPredicate { _, _ in memo.frame.maxY < keyboard.frame.minY }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [memoAboveKeyboard], timeout: 3), .completed, "メモの欄がキーボードに隠れる")
+            XCTAssertEqual(XCTWaiter.wait(for: [memoAboveKeyboard], timeout: 10), .completed, "メモの欄がキーボードに隠れる")
             shot("09c-記録-メモ")
         } else {
             XCTFail("2 行目の重さと回数の欄が無い")

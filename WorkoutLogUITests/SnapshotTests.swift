@@ -152,9 +152,10 @@ class SnapshotTests: XCTestCase {
 
         let name = app.textFields["例: ベンチプレス"]
         app.type("ベンチプレス", into: name)
-        // 打った直後は、欄の値に一部の文字しか入っていないことがある
+        // 打った直後は、欄の値に一部の文字しか入っていないことがある。
+        // CI では値を 1 回確かめるのに数秒かかることがあるので、何回か確かめ直せる上限にする
         let filled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "ベンチプレス"), object: name)
-        guard XCTWaiter.wait(for: [filled], timeout: 5) == .completed else { return XCTFail("名前の欄に入力できない: \(String(describing: name.value))") }
+        guard XCTWaiter.wait(for: [filled], timeout: 15) == .completed else { return XCTFail("名前の欄に入力できない: \(String(describing: name.value))") }
         button("胸").tap()
         snapshot("2-filled")
     }
