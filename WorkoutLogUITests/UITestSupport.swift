@@ -1,5 +1,14 @@
 import XCTest
 
+/// closeKeyboard() で「前回」を押す操作が、普段の何倍もの時間をかけて終わったことを表すエラー
+struct TapStalled: Error, CustomStringConvertible {
+    let seconds: TimeInterval
+
+    var description: String {
+        "「前回」を押す操作に \(Int(seconds)) 秒かかった"
+    }
+}
+
 @MainActor
 extension XCUIApplication {
     /// 空のデータベースと空の設定で起動する。exercises の種目は、起動したときから入れておく。
@@ -47,14 +56,14 @@ extension XCUIApplication {
     }
 
     /// 種目の記録で「＋ セットを追加」で行を足し、その行に重さと回数を入れる
-    func addSet(weight: String, reps: String) {
+    func addSet(weight: String, reps: String) throws {
         let fields = textFields.matching(identifier: "重さと回数")
         let count = fields.count
         buttons["＋ セットを追加"].tap()
         XCTAssertTrue(fields.element(boundBy: count + 1).waitForExistence(timeout: 5))
         type(weight, into: fields.element(boundBy: count))
         type(reps, into: fields.element(boundBy: count + 1))
-        closeKeyboard()
+        try closeKeyboard()
     }
 
     /// 欄をタップして文字を打つ。
@@ -77,21 +86,21 @@ extension XCUIApplication {
         delete.tap()
     }
 
-    /// 記録の画面の上の「前回」の行を押して、キーボードを閉じる。入力欄の外を押すと閉じるため
-    func closeKeyboard() {
+    /// 記録の画面の上の「前回」の行を押して、キーボードを閉じる。入力欄の外を押すと閉じるため。
+    /// 押す操作に普段の何倍もの時間がかかったら TapStalled を投げる。呼び出したテストは、捕まえずにそのまま終わらせる
+    func closeKeyboard() throws {
         guard keyboards.firstMatch.waitForExistence(timeout: 2) else { return }
         let start = Date()
         staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "前回")).firstMatch.tap()
-        // CI で、ここで押した後に XCTest がアプリのアニメーションの終わりを待ち続け、以後の操作が毎回 60 秒待ちになって、
-        // テストが十数分かかったことがある。普段は 2 秒かからないので、30 秒を超えたら落とす。
-        // continueAfterFailure が true のテストでも止まった操作を続けないよう、アプリも終わらせる
-        if Date().timeIntervalSince(start) > 30 {
-            XCTContext.runActivity(named: "アニメーションの終わりを待って止まった画面") { activity in
+        // CI で、ここで押した後に XCTest がアプリのアニメーションの終わりの知らせを 60 秒待って受け取れず、
+        // 以後の操作も毎回 60 秒待ちになって、テストが十数分かかったことがある。普段は 2 秒かからない。
+        // XCTFail ではなくエラーを投げる。continueAfterFailure が true のテストは、XCTFail の後も操作を続けるため
+        let seconds = Date().timeIntervalSince(start)
+        if seconds > 30 {
+            XCTContext.runActivity(named: "「前回」を押す操作が止まった後の画面") { activity in
                 activity.add(XCTAttachment(screenshot: XCUIScreen.main.screenshot()))
             }
-            XCTFail("「前回」を押した後、アニメーションの終わりを待って止まった")
-            terminate()
-            return
+            throw TapStalled(seconds: seconds)
         }
         XCTAssertTrue(keyboards.firstMatch.waitForNonExistence(timeout: 5), "入力欄の外を押してもキーボードが閉じない")
     }

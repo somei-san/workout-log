@@ -47,7 +47,7 @@ final class WalkthroughTests: XCTestCase {
         tap(button("追加"), "追加")
     }
 
-    func testWalkthrough() {
+    func testWalkthrough() throws {
         app.launchEmpty()
         shot("01-ホーム-空")
 
@@ -124,7 +124,7 @@ final class WalkthroughTests: XCTestCase {
         } else {
             XCTFail("2 行目の重さと回数の欄が無い")
         }
-        app.closeKeyboard()
+        try app.closeKeyboard()
 
         tap(app.buttons.matching(NSPredicate(format: "label CONTAINS '▾'")).firstMatch, "日付")
         let datePicker = app.datePickers.firstMatch
