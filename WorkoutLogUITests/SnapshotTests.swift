@@ -117,7 +117,7 @@ class SnapshotTests: XCTestCase {
         field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
     }
 
-    func testHome() {
+    func testHome() throws {
         launch()
         snapshot("1-empty")
 
@@ -127,7 +127,7 @@ class SnapshotTests: XCTestCase {
 
         app.card("ベンチプレス").tap()
         app.buttons["新しい記録"].tap()
-        app.addSet(weight: "100", reps: "5")
+        try app.addSet(weight: "100", reps: "5")
         // 戻る途中でもう一度戻ると、ホームの上のボタンがぼやけたままになることがある。種目の履歴が出てから戻る
         back()
         guard app.buttons["新しい記録"].waitForExistence(timeout: 5) else { return XCTFail("種目の履歴に戻らない") }
@@ -160,7 +160,7 @@ class SnapshotTests: XCTestCase {
         snapshot("2-filled")
     }
 
-    func testRecord() {
+    func testRecord() throws {
         // 種目は画面の操作で足す。起動引数で入れると、文字のキーボードを一度も出さずにキーパッドを開くことになり、
         // キーパッドの数字の書体が基準の画像と違って写った
         launch()
@@ -194,10 +194,10 @@ class SnapshotTests: XCTestCase {
         guard weight.value as? String == "102.5" else { return XCTFail("＋2.5 で重さが 102.5 にならない") }
         snapshot("5-plus-2.5")
 
-        app.closeKeyboard()
+        try app.closeKeyboard()
         snapshot("6-one-set")
 
-        app.addSet(weight: "102.5", reps: "5")
+        try app.addSet(weight: "102.5", reps: "5")
         snapshot("7-two-sets")
     }
 
@@ -218,15 +218,15 @@ class SnapshotTests: XCTestCase {
         XCTAssertTrue(app.datePickers.firstMatch.waitForNonExistence(timeout: 5), "キャンセルで日付のシートが閉じない")
     }
 
-    func testHistoryAndAnalysis() {
+    func testHistoryAndAnalysis() throws {
         launch(exercises: [("ベンチプレス", "chest")])
         app.card("ベンチプレス").tap()
         XCTAssertTrue(app.buttons["新しい記録"].waitForExistence(timeout: 5))
         snapshot("1-history-empty")
 
         app.buttons["新しい記録"].tap()
-        app.addSet(weight: "102.5", reps: "5")
-        app.addSet(weight: "102.5", reps: "5")
+        try app.addSet(weight: "102.5", reps: "5")
+        try app.addSet(weight: "102.5", reps: "5")
         back()
         // ボリューム / 推定 1RM / 最大重量。ボリュームは整数で出す
         XCTAssertTrue(app.staticTexts["1025 / 115.3 / 102.5"].waitForExistence(timeout: 5), "履歴のボリュームが整数で出ていない")
