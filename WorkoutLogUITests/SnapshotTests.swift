@@ -37,7 +37,7 @@ class SnapshotTests: XCTestCase {
         ] + (Self.isLargeText ? ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryXXXL"] : [])
         // 手元と CI でタイムゾーンが違っても、同じ日付と時刻を出す
         app.launchEnvironment["TZ"] = "Asia/Tokyo"
-        app.launch()
+        app.launchQuietly()
     }
 
     /// 今の画面を撮って、基準の画像と比べる。画像の名前の先頭に、撮った条件を付ける

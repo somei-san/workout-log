@@ -8,6 +8,15 @@ extension XCUIApplication {
     func launchEmpty(languageIsEnglish: Bool = false, exercises: [(name: String, part: String)] = []) {
         launchArguments = ["-uiTesting"] + (languageIsEnglish ? ["-AppleLanguages", "(en)"] : [])
             + Self.exerciseArguments(exercises)
+        launchQuietly()
+    }
+
+    /// システムのログを標準エラーに写させずに起動する。UI テストでは launch() の代わりに使う。
+    /// xcodebuild が起動したアプリは、XCTest がアプリの中で要素の属性を読むたびに出すログも標準エラーに写す。
+    /// 標準エラーは xcodebuild が読む端末なので、読むのが遅れると、アプリのメインスレッドが書き込みで待たされて、
+    /// 要素を探す操作が進まなくなる。アプリが print で出すものは、写すのをやめてもテスト結果に残る
+    func launchQuietly() {
+        launchEnvironment["OS_ACTIVITY_DT_MODE"] = "NO"
         launch()
     }
 
