@@ -104,12 +104,13 @@ class SnapshotTests: XCTestCase {
                 continue
             }
             tapEnd(of: field)
-            guard app.keyboards.firstMatch.waitForExistence(timeout: 5) else { return false }
+            guard app.keyboards.firstMatch.waitToAppear(timeout: 5) else { return false }
             field.typeText(text)
         }
+        // waitToAppear にせず、waitForExistence が最初に確かめるまでの 1 秒をおく。閉じる途中のキーパッドを、出ているものとして扱わないため
         if app.keyboards.firstMatch.waitForExistence(timeout: 2) { return true }
         tapEnd(of: field)
-        return app.keyboards.firstMatch.waitForExistence(timeout: 5)
+        return app.keyboards.firstMatch.waitToAppear(timeout: 5)
     }
 
     /// 欄の右端を押す。数字の欄は右に寄せて出すので、真ん中を押すと、打った数字の前にカーソルが置かれる
@@ -128,11 +129,12 @@ class SnapshotTests: XCTestCase {
         app.card("ベンチプレス").tap()
         app.buttons["新しい記録"].tap()
         try app.addSet(weight: "100", reps: "5")
-        // 戻る途中でもう一度戻ると、ホームの上のボタンがぼやけたままになることがある。種目の履歴が出てから戻る
+        // 戻る途中でもう一度戻ると、ホームの上のボタンがぼやけたままになることがある。種目の履歴が出てから戻る。
+        // 「新しい記録」は戻る途中にも画面にあるので、waitToAppear にせず、waitForExistence が最初に確かめるまでの 1 秒をおく
         back()
         guard app.buttons["新しい記録"].waitForExistence(timeout: 5) else { return XCTFail("種目の履歴に戻らない") }
         back()
-        guard app.buttons["部位"].waitForExistence(timeout: 5) else { return XCTFail("ホームに戻らない") }
+        guard app.buttons["部位"].waitToAppear(timeout: 5) else { return XCTFail("ホームに戻らない") }
         snapshot("3-recorded")
     }
 
@@ -140,14 +142,14 @@ class SnapshotTests: XCTestCase {
         // 「部位」を押して切り替えると、切り替えの文字と枠の描き方が起動のたびに少し変わり、
         // 基準の画像と一致しないことがある。押さずに、部位の見方を保存した設定として渡して起動する
         launch(["-home.mode", "part"], exercises: [("ベンチプレス", "chest"), ("スクワット", "leg")])
-        XCTAssertTrue(app.staticTexts["胸"].waitForExistence(timeout: 5), "部位ごとの見方で開かない")
+        XCTAssertTrue(app.staticTexts["胸"].waitToAppear(timeout: 5), "部位ごとの見方で開かない")
         snapshot("1-by-part")
     }
 
     func testExerciseForm() {
         launch()
         app.buttons["種目を追加"].tap()
-        XCTAssertTrue(app.buttons["追加"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["追加"].waitToAppear(timeout: 5))
         snapshot("1-empty")
 
         let name = app.textFields["例: ベンチプレス"]
@@ -155,7 +157,10 @@ class SnapshotTests: XCTestCase {
         // 打った直後は、欄の値に一部の文字しか入っていないことがある。
         // CI では値を 1 回確かめるのに数秒かかることがあるので、何回か確かめ直せる上限にする
         let filled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "ベンチプレス"), object: name)
-        guard XCTWaiter.wait(for: [filled], timeout: 15) == .completed else { return XCTFail("名前の欄に入力できない: \(String(describing: name.value))") }
+        // XCTWaiter は最初に確かめるまでに 1 秒かかるので、先に一度確かめる
+        guard name.value as? String == "ベンチプレス" || XCTWaiter.wait(for: [filled], timeout: 15) == .completed else {
+            return XCTFail("名前の欄に入力できない: \(String(describing: name.value))")
+        }
         button("胸").tap()
         snapshot("2-filled")
     }
@@ -167,15 +172,15 @@ class SnapshotTests: XCTestCase {
         app.addExercise("ベンチプレス", part: "胸")
         app.card("ベンチプレス").tap()
         app.buttons["新しい記録"].tap()
-        XCTAssertTrue(app.buttons["＋ セットを追加"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["＋ セットを追加"].waitToAppear(timeout: 5))
         snapshot("1-new")
 
         app.buttons["＋ セットを追加"].tap()
         let fields = app.textFields.matching(identifier: "重さと回数")
-        XCTAssertTrue(fields.element(boundBy: 1).waitForExistence(timeout: 5))
+        XCTAssertTrue(fields.element(boundBy: 1).waitToAppear(timeout: 5))
         let weight = fields.element(boundBy: 0), reps = fields.element(boundBy: 1)
         // 足した行の重さの欄に、カーソルが移ってキーパッドが出る
-        guard app.keyboards.firstMatch.waitForExistence(timeout: 10) else { return XCTFail("キーパッドが出ない") }
+        guard app.keyboards.firstMatch.waitToAppear(timeout: 10) else { return XCTFail("キーパッドが出ない") }
         snapshot("2-keypad")
 
         // 数字以外の文字も打つ
@@ -189,7 +194,7 @@ class SnapshotTests: XCTestCase {
 
         // 「＋2.5」は重さの欄を打っているときだけ出る
         tapEnd(of: weight)
-        guard button("＋2.5").waitForExistence(timeout: 5) else { return XCTFail("重さの欄で「＋2.5」が出ない") }
+        guard button("＋2.5").waitToAppear(timeout: 5) else { return XCTFail("重さの欄で「＋2.5」が出ない") }
         button("＋2.5").tap()
         guard weight.value as? String == "102.5" else { return XCTFail("＋2.5 で重さが 102.5 にならない") }
         snapshot("5-plus-2.5")
@@ -209,19 +214,19 @@ class SnapshotTests: XCTestCase {
         let datePicker = app.datePickers.firstMatch
         for _ in 0..<3 {
             app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "▾")).firstMatch.tap()
-            if datePicker.waitForExistence(timeout: 5) { break }
+            if datePicker.waitToAppear(timeout: 5) { break }
         }
         guard datePicker.exists else { return XCTFail("日付のシートが出ない") }
         snapshot("1-sheet")
 
         button("キャンセル").tap()
-        XCTAssertTrue(app.datePickers.firstMatch.waitForNonExistence(timeout: 5), "キャンセルで日付のシートが閉じない")
+        XCTAssertTrue(app.datePickers.firstMatch.waitToDisappear(timeout: 5), "キャンセルで日付のシートが閉じない")
     }
 
     func testHistoryAndAnalysis() throws {
         launch(exercises: [("ベンチプレス", "chest")])
         app.card("ベンチプレス").tap()
-        XCTAssertTrue(app.buttons["新しい記録"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["新しい記録"].waitToAppear(timeout: 5))
         snapshot("1-history-empty")
 
         app.buttons["新しい記録"].tap()
@@ -229,7 +234,7 @@ class SnapshotTests: XCTestCase {
         try app.addSet(weight: "102.5", reps: "5")
         back()
         // ボリューム / 推定 1RM / 最大重量。ボリュームは整数で出す
-        XCTAssertTrue(app.staticTexts["1025 / 115.3 / 102.5"].waitForExistence(timeout: 5), "履歴のボリュームが整数で出ていない")
+        XCTAssertTrue(app.staticTexts["1025 / 115.3 / 102.5"].waitToAppear(timeout: 5), "履歴のボリュームが整数で出ていない")
         snapshot("2-history")
 
         button("この種目の分析").tap()
@@ -239,11 +244,11 @@ class SnapshotTests: XCTestCase {
     func testSettings() {
         launch()
         button("設定").tap()
-        XCTAssertTrue(app.buttons["BackButton"].firstMatch.waitForExistence(timeout: 5), "設定の画面に移らない")
+        XCTAssertTrue(app.buttons["BackButton"].firstMatch.waitToAppear(timeout: 5), "設定の画面に移らない")
         snapshot("1-settings")
 
         button("データを読み込む").tap()
-        XCTAssertTrue(app.navigationBars["CSV の読み込み"].waitForExistence(timeout: 5), "CSV の読み込みの画面に移らない")
+        XCTAssertTrue(app.navigationBars["CSV の読み込み"].waitToAppear(timeout: 5), "CSV の読み込みの画面に移らない")
         snapshot("2-csv-import")
 
         // 一番下まで送る。文字が大きいと画面が長いので、下に着いた後も余分に送る

@@ -23,7 +23,7 @@ final class WalkthroughTests: XCTestCase {
 
     /// 見つからなくてもテストを止めずに先へ進む
     private func tap(_ element: XCUIElement, _ note: String) {
-        if element.waitForExistence(timeout: 3) {
+        if element.waitToAppear(timeout: 3) {
             element.tap()
         } else {
             XCTFail("見つからない: \(note)")
@@ -40,7 +40,7 @@ final class WalkthroughTests: XCTestCase {
         let field = app.textFields["例: ベンチプレス"]
         tap(field, "名前")
         // 起動直後のシミュレーターは、キーボードが出るまでに時間がかかる
-        _ = app.keyboards.firstMatch.waitForExistence(timeout: 10)
+        _ = app.keyboards.firstMatch.waitToAppear(timeout: 10)
         field.typeText(name)
         tap(button(part), part)
         shot("02-種目の追加-\(name)")
@@ -104,7 +104,7 @@ final class WalkthroughTests: XCTestCase {
             shot("09-記録-2セット目")
             // 最後の行の最後の欄では、空の行を足して、その行の重さへ移る
             tap(button("次へ"), "次へ 最後の欄")
-            XCTAssertTrue(fields.element(boundBy: 4).waitForExistence(timeout: 3), "最後の欄の「次へ」で行が増えない")
+            XCTAssertTrue(fields.element(boundBy: 4).waitToAppear(timeout: 3), "最後の欄の「次へ」で行が増えない")
             fields.element(boundBy: 4).typeText("60")
             XCTAssertEqual(fields.element(boundBy: 4).value as? String, "60", "足した行の重さの欄へ移らない")
             // 打っている欄は、キーボードの上のボタンの並びより上に出る
@@ -128,17 +128,17 @@ final class WalkthroughTests: XCTestCase {
 
         tap(app.buttons.matching(NSPredicate(format: "label CONTAINS '▾'")).firstMatch, "日付")
         let datePicker = app.datePickers.firstMatch
-        XCTAssertTrue(datePicker.waitForExistence(timeout: 5), "日付のシートが出ない")
+        XCTAssertTrue(datePicker.waitToAppear(timeout: 5), "日付のシートが出ない")
         shot("10-日付と時刻")
         tap(button("キャンセル"), "キャンセル")
-        if !datePicker.waitForNonExistence(timeout: 5) {
+        if !datePicker.waitToDisappear(timeout: 5) {
             shot("10b-キャンセルで閉じない")
             XCTFail("キャンセルで日付のシートが閉じない")
             tap(button("完了"), "完了")
-            if !datePicker.waitForNonExistence(timeout: 5) {
+            if !datePicker.waitToDisappear(timeout: 5) {
                 XCTFail("完了でも日付のシートが閉じない")
                 app.swipeDown()
-                _ = datePicker.waitForNonExistence(timeout: 5)
+                _ = datePicker.waitToDisappear(timeout: 5)
             }
         }
 
@@ -160,7 +160,7 @@ final class WalkthroughTests: XCTestCase {
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.9)).tap()
 
         let squat = app.buttons.containing(NSPredicate(format: "label CONTAINS 'スクワット'")).firstMatch
-        if squat.waitForExistence(timeout: 3) {
+        if squat.waitToAppear(timeout: 3) {
             squat.press(forDuration: 1.2)
             shot("16-長押しメニュー")
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.9)).tap()
