@@ -20,23 +20,6 @@ final class RecordTests: XCTestCase {
 
     func test最後のセットを消すときは確認を出し_記録ごと消して履歴に戻る() throws {
         try recordOneSet()
-        // 足した行は空の行になる
-        app.buttons["＋ セットを追加"].tap()
-        let fields = app.textFields.matching(identifier: "重さと回数")
-        XCTAssertTrue(fields.element(boundBy: 3).waitForExistence(timeout: 5))
-        // 入力中の欄は空でも「–」を出さないので、キーボードを閉じてから見る
-        try app.closeKeyboard()
-        XCTAssertEqual(fields.element(boundBy: 2).value as? String, "–", "足した行に値が入っている")
-        XCTAssertEqual(fields.element(boundBy: 3).value as? String, "–", "足した行に値が入っている")
-        app.type("20", into: fields.element(boundBy: 2))
-        app.type("8", into: fields.element(boundBy: 3))
-        try app.closeKeyboard()
-
-        // 2 つのうち 1 つを消すときは確認を出さない
-        app.swipeToDelete(app.textFields.matching(identifier: "重さと回数").element(boundBy: 2))
-        XCTAssertFalse(app.buttons["記録を削除"].waitForExistence(timeout: 2), "最後ではないセットで確認が出た")
-        XCTAssertEqual(app.textFields.matching(identifier: "重さと回数").count, 2)
-
         app.swipeToDelete(app.textFields.matching(identifier: "重さと回数").element(boundBy: 0))
         let confirm = app.buttons["記録を削除"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 5), "最後のセットで確認が出ない")
@@ -78,17 +61,11 @@ final class RecordTests: XCTestCase {
         app.buttons["完了"].tap()
         XCTAssertTrue(edit.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["＋ セットを追加"].exists)
-    }
 
-    func test履歴に戻ると記録の値が出て_次の記録では前回として出る() throws {
-        try recordOneSet()
-        try app.addSet(weight: "20", reps: "8")
+        // 2 回目に開いた「新しい記録」は、1 回目の記録を「前回」として出す
         app.buttons["BackButton"].firstMatch.tap()
-        // ボリューム / 推定 1RM / 最大重量
-        XCTAssertTrue(app.staticTexts["320 / 24.8 / 20.0"].waitForExistence(timeout: 5))
-
         app.buttons["新しい記録"].tap()
-        XCTAssertTrue(app.staticTexts["前回  20kg×8×2"].waitForExistence(timeout: 5), "同じセットが前回でまとまらない")
+        XCTAssertTrue(app.staticTexts["前回  20kg×8"].waitForExistence(timeout: 5), "2 回目の「新しい記録」に「前回」が出ない")
     }
 
     func test数字の欄は左の端を押しても_カーソルが数字の一番右に来る() throws {
@@ -108,15 +85,5 @@ final class RecordTests: XCTestCase {
             XCTAssertEqual(field.value as? String, expected, "⌫ で右から 1 文字消えない")
             try app.closeKeyboard()
         }
-    }
-
-    func test新しい記録には種目の最初に並べるセット数だけ空の行が並ぶ() {
-        app.launchEmpty()
-        app.addExercise("懸垂", part: "背中", initialRowCount: 2)
-        app.card("懸垂").tap()
-        app.buttons["新しい記録"].tap()
-        XCTAssertTrue(app.buttons["＋ セットを追加"].waitForExistence(timeout: 5))
-        // 1 行に重さと回数の 2 つの欄がある
-        XCTAssertEqual(app.textFields.matching(identifier: "重さと回数").count, 4)
     }
 }

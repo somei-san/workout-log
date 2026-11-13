@@ -91,6 +91,29 @@ struct RecordModelTests {
         #expect(secondModel.previousText == "20kg×8×2")
     }
 
+    @Test func 新しい記録の前回は_いちばん新しい記録のセット() async throws {
+        let exercise = try insertExercise()
+        _ = try insertRecord(exercise, at: daysAgo(3), sets: [(60, 10)])
+        _ = try insertRecord(exercise, at: daysAgo(1), sets: [(20, 8), (20, 8)])
+
+        let model = RecordModel()
+        try await model.load(.new(exerciseId: exercise.id!), database: database)
+        #expect(model.previousText == "20kg×8×2")
+    }
+
+    @Test func 足した行は空で_セットは増えない() async throws {
+        let exercise = try insertExercise()
+        let record = try insertRecord(exercise, at: Clock.now(), sets: [(20, 8)])
+        let model = RecordModel()
+        try await model.load(.existing(recordId: record.id!), database: database)
+
+        let row = model.addRow()
+        #expect(model.rows.map(\.id) == [model.rows[0].id, row])
+        #expect(model.value(row, \.weight) == "")
+        #expect(model.value(row, \.reps) == "")
+        #expect(try savedSets().count == 1)
+    }
+
     @Test func 最後のセットは消さずに確認を求め_確認すると記録ごと消える() async throws {
         let exercise = try insertExercise()
         let record = try insertRecord(exercise, at: Clock.now(), sets: [(60, 10)])
