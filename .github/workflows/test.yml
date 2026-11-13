@@ -74,17 +74,22 @@ jobs:
       # 失敗することがあった。その備えに、先に一度アプリを起動しておく
       - name: アプリを一度起動しておく
         run: |
+          set -x
+          sysctl -n hw.ncpu hw.memsize
+          top -l 2 -n 12 -o cpu -stats pid,command,cpu,time | tail -n 14
           xcrun simctl install "$SIMULATOR_ID" build/Build/Products/Debug-iphonesimulator/WorkoutLog.app
           xcrun simctl launch "$SIMULATOR_ID" io.github.somei-san.WorkoutLog
           sleep 10
+          top -l 2 -n 12 -o cpu -stats pid,command,cpu,time | tail -n 14
           xcrun simctl terminate "$SIMULATOR_ID" io.github.somei-san.WorkoutLog
+          ls build/Build/Products
 
       - name: 単体テスト
         if: ${{ matrix.unit }}
         run: >
           xcodebuild test-without-building
-          -project WorkoutLog.xcodeproj -scheme WorkoutLog
-          -destination "id=$SIMULATOR_ID" -derivedDataPath build
+          -xctestrun build/Build/Products/*.xctestrun
+          -destination "id=$SIMULATOR_ID"
           -only-testing:WorkoutLogTests
           -resultBundlePath results/unit.xcresult
 
@@ -99,8 +104,8 @@ jobs:
           TEST_RUNNER_SNAPSHOT_TESTING_RECORD: never
         run: >
           xcodebuild test-without-building
-          -project WorkoutLog.xcodeproj -scheme WorkoutLog
-          -destination "id=$SIMULATOR_ID" -derivedDataPath build
+          -xctestrun build/Build/Products/*.xctestrun
+          -destination "id=$SIMULATOR_ID"
           ${{ matrix.ui }}
           -retry-tests-on-failure -test-iterations 2
           -resultBundlePath results/ui.xcresult

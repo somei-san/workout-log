@@ -17,7 +17,7 @@ fi
 
 # 起動済みなら boot は失敗するので、失敗を無視する
 xcrun simctl boot "$udid" 2>/dev/null || true
-xcrun simctl bootstatus "$udid" -b > /dev/null
+xcrun simctl bootstatus "$udid" -b >&2
 
 # ステータスバーの時刻・電池・電波を毎回同じ表示にする。上書きは端末を再起動すると消えるので、起動のたびにかける
 xcrun simctl status_bar "$udid" override \
