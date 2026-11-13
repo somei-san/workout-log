@@ -3,6 +3,8 @@
 # 手元と CI で同じ条件で撮るため、どちらもこのスクリプトで用意する。
 # 既存のシミュレーターを使い回すと、キーボードの種類などの設定が手元と CI で食い違うおそれがあるため、専用の端末を作る
 set -euo pipefail
+# 実験: コマンドごとの時刻を CI のログに出す
+set -x
 
 name="WorkoutLog VRT"
 runtime="com.apple.CoreSimulator.SimRuntime.iOS-27-0"
