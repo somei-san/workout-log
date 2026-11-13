@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   # 1 台のシミュレーターで全部を回すと時間がかかるので、テストを 4 つのジョブに分けて、別々の runner で同時に回す。
-  # テストの時間がどのジョブも 7 分前後になるように分けている。テストを足して偏ったら、分け方を見直す
+  # テストの時間がどのジョブも 5 分前後になるように分けている。テストを足して偏ったら、分け方を見直す
   test:
     name: test (${{ matrix.name }})
     runs-on: xcode-27
@@ -22,15 +22,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: 単体と操作
+          - name: 記録の操作と通し
+            ui: -only-testing:WorkoutLogUITests/RecordTests -only-testing:WorkoutLogUITests/WalkthroughTests
+          - name: 見た目のライト・標準
+            ui: -only-testing:WorkoutLogUITests/SnapshotTests
+          - name: 単体と見た目のダーク・標準とライト・XXXL
             unit: true
-            ui: -only-testing:WorkoutLogUITests/ExerciseTests -only-testing:WorkoutLogUITests/RecordTests
-          - name: 通しと見た目のライト・標準
-            ui: -only-testing:WorkoutLogUITests/WalkthroughTests -only-testing:WorkoutLogUITests/SnapshotTests
-          - name: 見た目のダーク・標準とライト・XXXL
             ui: -only-testing:WorkoutLogUITests/DarkSnapshotTests -only-testing:WorkoutLogUITests/LargeTextSnapshotTests
-          - name: 見た目のダーク・XXXL
-            ui: -only-testing:WorkoutLogUITests/DarkLargeTextSnapshotTests
+          - name: 種目の操作と見た目のダーク・XXXL
+            ui: -only-testing:WorkoutLogUITests/ExerciseTests -only-testing:WorkoutLogUITests/DarkLargeTextSnapshotTests
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
     steps:
