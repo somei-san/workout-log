@@ -17,7 +17,8 @@ jobs:
   test:
     name: test (${{ matrix.name }})
     runs-on: xcode-27
-    timeout-minutes: 40
+    # 実験: 落ち着くのを待つ分だけ延ばす
+    timeout-minutes: 70
     strategy:
       fail-fast: false
       matrix:
@@ -62,6 +63,11 @@ jobs:
           -destination "platform=iOS Simulator,OS=27.0,name=iPhone 17" -derivedDataPath build
           -skipPackageUpdates
 
+      # 実験: この後、30 秒ごとに 100 回、負荷と、CPU を多く使っているプロセスをファイルに残す
+      - name: 計測を始める
+        run: |
+          nohup bash -c 'for i in $(seq 100); do date +%T; uptime; ps -Aro %cpu,comm | head -9 | sed -E "s#^( *[0-9.]+ ).*/#\1#"; sleep 30; done' > "$RUNNER_TEMP/cpu.log" 2>&1 &
+
       # テストを回すシミュレーターは、スナップショットを手元と同じ条件で比べるため、手元で撮るときと同じスクリプトで
       # iOS 27.0 の iPhone 17 の専用のものを用意する
       - name: シミュレーターを起動する
@@ -70,14 +76,38 @@ jobs:
           simulator=$(scripts/vrt-simulator.sh)
           echo "SIMULATOR_ID=$simulator" >> "$GITHUB_ENV"
 
+      # 実験: 初めて起動した後の処理が落ち着くまで、何もせずに待つ。
+      # 1 分平均の負荷が 30（起動する前の 20〜29 より少し上）を下回るか、20 分たつまで
+      - name: 起動の後の処理が落ち着くのを待つ
+        run: |
+          while [ "$SECONDS" -lt 1200 ]; do
+            load=$(sysctl -n vm.loadavg | awk '{ print $2 }')
+            echo "$(date +%T) load=$load"
+            if awk -v load="$load" 'BEGIN { exit !(load < 30) }'; then
+              break
+            fi
+            sleep 15
+          done
+
+      # 実験: 一度起動したシミュレーターを止めて、起動し直す。データの大きさも出す
+      - name: シミュレーターを起動し直す
+        run: |
+          set -x
+          xcrun simctl shutdown "$SIMULATOR_ID"
+          du -sh "$HOME/Library/Developer/CoreSimulator/Devices/$SIMULATOR_ID"
+          scripts/vrt-simulator.sh
+          date
+
       # 手元の iOS 27.2 のシミュレーターでは、起動した直後に UI テストのアプリの起動が数分止まって
       # 失敗することがあった。その備えに、先に一度アプリを起動しておく
       - name: アプリを一度起動しておく
         run: |
+          set -x
           xcrun simctl install "$SIMULATOR_ID" build/Build/Products/Debug-iphonesimulator/WorkoutLog.app
           xcrun simctl launch "$SIMULATOR_ID" io.github.somei-san.WorkoutLog
           sleep 10
           xcrun simctl terminate "$SIMULATOR_ID" io.github.somei-san.WorkoutLog
+          date
 
       # 単体テストと UI テストの段階は、プロジェクトを開かずに、ビルドが作った xctestrun を指定して回す。
       # プロジェクトを指定すると、テストを回すたびに依存のパッケージの解決をやり直す。
@@ -107,6 +137,11 @@ jobs:
           ${{ matrix.ui }}
           -retry-tests-on-failure -test-iterations 2
           -resultBundlePath results/ui.xcresult
+
+      # 実験: 計測の結果をログに出す
+      - name: 計測の結果を出す
+        if: ${{ always() }}
+        run: cat "$RUNNER_TEMP/cpu.log"
 
       - name: テスト結果を残す
         # 通ったときも残す。CI でだけ、記録の画面で操作のたびにアプリのアニメーションの終わりを 60 秒待つことがあり、
