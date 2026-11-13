@@ -9,6 +9,23 @@ struct TapStalled: Error, CustomStringConvertible {
     }
 }
 
+/// 要素を待つ処理。先に一度確かめ、条件を満たしていればすぐ返す。
+/// XCTest の待つ処理（waitForExistence(timeout:) など）は、条件をすでに満たしていても、最初に確かめるまでに 1 秒かかるため
+@MainActor
+extension XCUIElement {
+    func waitToAppear(timeout: TimeInterval) -> Bool {
+        exists || waitForExistence(timeout: timeout)
+    }
+
+    func waitToDisappear(timeout: TimeInterval) -> Bool {
+        !exists || waitForNonExistence(timeout: timeout)
+    }
+
+    func waitToBeEnabled(timeout: TimeInterval) -> Bool {
+        isEnabled || wait(for: \.isEnabled, toEqual: true, timeout: timeout)
+    }
+}
+
 @MainActor
 extension XCUIApplication {
     /// 空のデータベースと空の設定で起動する。exercises の種目は、起動したときから入れておく。
@@ -39,14 +56,14 @@ extension XCUIApplication {
     func addExercise(_ name: String, part: String) {
         buttons["種目を追加"].tap()
         let add = buttons["追加"]
-        XCTAssertTrue(add.waitForExistence(timeout: 5))
+        XCTAssertTrue(add.waitToAppear(timeout: 5))
         XCTAssertFalse(add.isEnabled, "名前が空なのに「追加」を押せる")
         type(name, into: textFields["例: ベンチプレス"])
         buttons.matching(NSPredicate(format: "label BEGINSWITH %@", part)).firstMatch.tap()
         // 入力の直後は、まだ押せる状態になっていないことがある
-        XCTAssertTrue(add.wait(for: \.isEnabled, toEqual: true, timeout: 5))
+        XCTAssertTrue(add.waitToBeEnabled(timeout: 5))
         add.tap()
-        XCTAssertTrue(add.waitForNonExistence(timeout: 5), "「追加」で種目の追加のシートが閉じない")
+        XCTAssertTrue(add.waitToDisappear(timeout: 5), "「追加」で種目の追加のシートが閉じない")
     }
 
     /// 種目の記録で「＋ セットを追加」で行を足し、その行に重さと回数を入れる
@@ -54,7 +71,7 @@ extension XCUIApplication {
         let fields = textFields.matching(identifier: "重さと回数")
         let count = fields.count
         buttons["＋ セットを追加"].tap()
-        XCTAssertTrue(fields.element(boundBy: count + 1).waitForExistence(timeout: 5))
+        XCTAssertTrue(fields.element(boundBy: count + 1).waitToAppear(timeout: 5))
         type(weight, into: fields.element(boundBy: count))
         type(reps, into: fields.element(boundBy: count + 1))
         try closeKeyboard()
@@ -65,7 +82,7 @@ extension XCUIApplication {
     func type(_ text: String, into field: XCUIElement) {
         for _ in 0..<3 {
             field.tap()
-            if keyboards.firstMatch.waitForExistence(timeout: 5) { break }
+            if keyboards.firstMatch.waitToAppear(timeout: 5) { break }
         }
         field.typeText(text)
     }
@@ -75,7 +92,7 @@ extension XCUIApplication {
         let delete = buttons["削除"]
         for _ in 0..<3 {
             row.swipeLeft()
-            if delete.waitForExistence(timeout: 3) { break }
+            if delete.waitToAppear(timeout: 3) { break }
         }
         delete.tap()
     }
@@ -83,7 +100,7 @@ extension XCUIApplication {
     /// 記録の画面の上の「前回」の行を押して、キーボードを閉じる。入力欄の外を押すと閉じるため。
     /// 押す操作に普段の何倍もの時間がかかったら TapStalled を投げる。呼び出したテストは、捕まえずにそのまま終わらせる
     func closeKeyboard() throws {
-        guard keyboards.firstMatch.waitForExistence(timeout: 2) else { return }
+        guard keyboards.firstMatch.waitToAppear(timeout: 2) else { return }
         let start = Date()
         staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "前回")).firstMatch.tap()
         // CI で、ここで押した後に XCTest がアプリのアニメーションの終わりの知らせを 60 秒待って受け取れず、
@@ -96,7 +113,7 @@ extension XCUIApplication {
             }
             throw TapStalled(seconds: seconds)
         }
-        XCTAssertTrue(keyboards.firstMatch.waitForNonExistence(timeout: 5), "入力欄の外を押してもキーボードが閉じない")
+        XCTAssertTrue(keyboards.firstMatch.waitToDisappear(timeout: 5), "入力欄の外を押してもキーボードが閉じない")
     }
 
     /// ホームの種目のカード
