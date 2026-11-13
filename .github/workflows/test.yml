@@ -66,6 +66,9 @@ jobs:
       # iOS 27.0 の iPhone 17 の専用のものを用意する
       - name: シミュレーターを起動する
         # echo の引数の中のコマンド置換では、スクリプトが失敗しても段階が止まらないので、先に変数に受ける
+        # 実験: ステータスバーの上書きを、アプリを一度起動した後に回す
+        env:
+          VRT_SKIP_STATUS_BAR: 1
         run: |
           simulator=$(scripts/vrt-simulator.sh)
           echo "SIMULATOR_ID=$simulator" >> "$GITHUB_ENV"
@@ -74,10 +77,16 @@ jobs:
       # 失敗することがあった。その備えに、先に一度アプリを起動しておく
       - name: アプリを一度起動しておく
         run: |
+          set -x
           xcrun simctl install "$SIMULATOR_ID" build/Build/Products/Debug-iphonesimulator/WorkoutLog.app
           xcrun simctl launch "$SIMULATOR_ID" io.github.somei-san.WorkoutLog
           sleep 10
           xcrun simctl terminate "$SIMULATOR_ID" io.github.somei-san.WorkoutLog
+          date
+
+      # 実験: 同じスクリプトをもう一度呼ぶ。起動済みなので、ステータスバーの上書きだけが効く
+      - name: ステータスバーを上書きする
+        run: scripts/vrt-simulator.sh
 
       # 単体テストと UI テストの段階は、プロジェクトを開かずに、ビルドが作った xctestrun を指定して回す。
       # プロジェクトを指定すると、テストを回すたびに依存のパッケージの解決をやり直す。

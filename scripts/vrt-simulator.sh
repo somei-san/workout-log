@@ -3,6 +3,8 @@
 # 手元と CI で同じ条件で撮るため、どちらもこのスクリプトで用意する。
 # 既存のシミュレーターを使い回すと、キーボードの種類などの設定が手元と CI で食い違うおそれがあるため、専用の端末を作る
 set -euo pipefail
+# 実験: コマンドごとの時刻を CI のログに出す
+set -x
 
 name="WorkoutLog VRT"
 runtime="com.apple.CoreSimulator.SimRuntime.iOS-27-0"
@@ -20,9 +22,11 @@ xcrun simctl boot "$udid" 2>/dev/null || true
 xcrun simctl bootstatus "$udid" -b > /dev/null
 
 # ステータスバーの時刻・電池・電波を毎回同じ表示にする。上書きは端末を再起動すると消えるので、起動のたびにかける
-xcrun simctl status_bar "$udid" override \
-  --time 9:41 --dataNetwork wifi --wifiMode active --wifiBars 3 \
-  --cellularMode active --cellularBars 4 --operatorName "" \
-  --batteryState charged --batteryLevel 100
+if [ "${VRT_SKIP_STATUS_BAR:-}" != 1 ]; then
+  xcrun simctl status_bar "$udid" override \
+    --time 9:41 --dataNetwork wifi --wifiMode active --wifiBars 3 \
+    --cellularMode active --cellularBars 4 --operatorName "" \
+    --batteryState charged --batteryLevel 100
+fi
 
 echo "$udid"
