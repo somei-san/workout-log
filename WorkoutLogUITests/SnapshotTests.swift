@@ -146,11 +146,13 @@ class SnapshotTests: XCTestCase {
         snapshot("1-by-part")
     }
 
-    func testExerciseForm() {
+    /// 種目を足す画面と設定の画面を、1 回の起動で続けて撮る。種目を足す画面はキャンセルで閉じ、データベースを空のまま設定に移る。
+    /// 画面を順に進めるので、途中で XCTFail で返るか throw すると、後の画面は撮らない
+    func testExerciseFormAndSettings() {
         launch()
         app.buttons["種目を追加"].tap()
         XCTAssertTrue(app.buttons["追加"].waitToAppear(timeout: 5))
-        snapshot("1-empty")
+        snapshot("1-exercise-form-empty")
 
         let name = app.textFields["例: ベンチプレス"]
         app.type("ベンチプレス", into: name)
@@ -162,7 +164,22 @@ class SnapshotTests: XCTestCase {
             return XCTFail("名前の欄に入力できない: \(String(describing: name.value))")
         }
         button("胸").tap()
-        snapshot("2-filled")
+        snapshot("2-exercise-form-filled")
+
+        button("キャンセル").tap()
+        guard app.buttons["追加"].waitToDisappear(timeout: 5) else { return XCTFail("キャンセルで種目を足す画面が閉じない") }
+        button("設定").tap()
+        XCTAssertTrue(app.buttons["BackButton"].firstMatch.waitToAppear(timeout: 5), "設定の画面に移らない")
+        snapshot("3-settings")
+
+        button("データを読み込む").tap()
+        XCTAssertTrue(app.navigationBars["CSV の読み込み"].waitToAppear(timeout: 5), "CSV の読み込みの画面に移らない")
+        snapshot("4-csv-import")
+
+        // 一番下まで送る。文字が大きいと画面が長いので、下に着いた後も余分に送る
+        for _ in 0..<6 { app.swipeUp() }
+        XCTAssertTrue(app.buttons["ファイルを選んで読み込む"].isHittable, "CSV の読み込みの画面の下まで送れない")
+        snapshot("5-csv-import-bottom")
     }
 
     func testRecord() throws {
@@ -206,9 +223,14 @@ class SnapshotTests: XCTestCase {
         snapshot("7-two-sets")
     }
 
-    func testDateSheet() {
+    /// 種目の履歴・記録の日付のシート・分析の画面を、1 回の起動で続けて撮る。
+    /// 画面を順に進めるので、途中で XCTFail で返るか throw すると、後の画面は撮らない
+    func testHistoryAndAnalysis() throws {
         launch(exercises: [("ベンチプレス", "chest")])
         app.card("ベンチプレス").tap()
+        XCTAssertTrue(app.buttons["新しい記録"].waitToAppear(timeout: 5))
+        snapshot("1-history-empty")
+
         app.buttons["新しい記録"].tap()
         // 日付を押しても日付のシートが出ないことがあるので、出るまで押し直す
         let datePicker = app.datePickers.firstMatch
@@ -217,44 +239,19 @@ class SnapshotTests: XCTestCase {
             if datePicker.waitToAppear(timeout: 5) { break }
         }
         guard datePicker.exists else { return XCTFail("日付のシートが出ない") }
-        snapshot("1-sheet")
+        snapshot("2-date-sheet")
 
         button("キャンセル").tap()
-        XCTAssertTrue(app.datePickers.firstMatch.waitToDisappear(timeout: 5), "キャンセルで日付のシートが閉じない")
-    }
-
-    func testHistoryAndAnalysis() throws {
-        launch(exercises: [("ベンチプレス", "chest")])
-        app.card("ベンチプレス").tap()
-        XCTAssertTrue(app.buttons["新しい記録"].waitToAppear(timeout: 5))
-        snapshot("1-history-empty")
-
-        app.buttons["新しい記録"].tap()
+        guard datePicker.waitToDisappear(timeout: 5) else { return XCTFail("キャンセルで日付のシートが閉じない") }
         try app.addSet(weight: "102.5", reps: "5")
         try app.addSet(weight: "102.5", reps: "5")
         back()
         // ボリューム / 推定 1RM / 最大重量。ボリュームは整数で出す
         XCTAssertTrue(app.staticTexts["1025 / 115.3 / 102.5"].waitToAppear(timeout: 5), "履歴のボリュームが整数で出ていない")
-        snapshot("2-history")
+        snapshot("3-history")
 
         button("この種目の分析").tap()
-        snapshot("3-analysis")
-    }
-
-    func testSettings() {
-        launch()
-        button("設定").tap()
-        XCTAssertTrue(app.buttons["BackButton"].firstMatch.waitToAppear(timeout: 5), "設定の画面に移らない")
-        snapshot("1-settings")
-
-        button("データを読み込む").tap()
-        XCTAssertTrue(app.navigationBars["CSV の読み込み"].waitToAppear(timeout: 5), "CSV の読み込みの画面に移らない")
-        snapshot("2-csv-import")
-
-        // 一番下まで送る。文字が大きいと画面が長いので、下に着いた後も余分に送る
-        for _ in 0..<6 { app.swipeUp() }
-        XCTAssertTrue(app.buttons["ファイルを選んで読み込む"].isHittable, "CSV の読み込みの画面の下まで送れない")
-        snapshot("3-csv-import-bottom")
+        snapshot("4-analysis")
     }
 }
 
