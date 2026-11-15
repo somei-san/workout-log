@@ -102,9 +102,13 @@ final class WalkthroughTests: XCTestCase {
             sleep(1)
             XCTAssertTrue(app.keyboards.firstMatch.exists, "打っている欄の余白を押すと、キーボードが閉じる")
             shot("09-記録-2セット目")
-            // 最後の行の最後の欄では、空の行を足して、その行の重さへ移る
-            tap(button("次へ"), "次へ 最後の欄")
-            XCTAssertTrue(fields.element(boundBy: 4).waitToAppear(timeout: 3), "最後の欄の「次へ」で行が増えない")
+            // 行の最後の欄のボタンは「閉じる」で、行を足さずにキーボードを閉じる
+            XCTAssertFalse(button("次へ").exists, "行の最後の欄で「次へ」が出ている")
+            tap(button("閉じる"), "閉じる 最後の欄")
+            XCTAssertTrue(app.keyboards.firstMatch.waitToDisappear(timeout: 3), "「閉じる」でキーボードが閉じない")
+            XCTAssertEqual(fields.count, 4, "「閉じる」で行が増えた")
+            tap(button("＋ セットを追加"), "セットを追加 3 回目")
+            XCTAssertTrue(fields.element(boundBy: 4).waitToAppear(timeout: 3), "「＋ セットを追加」で行が増えない")
             fields.element(boundBy: 4).typeText("60")
             XCTAssertEqual(fields.element(boundBy: 4).value as? String, "60", "足した行の重さの欄へ移らない")
             // 打っている欄は、キーボードの上のボタンの並びより上に出る
