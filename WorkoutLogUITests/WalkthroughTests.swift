@@ -164,7 +164,11 @@ final class WalkthroughTests: XCTestCase {
         back()
         shot("13-ホーム-記録後")
 
+        // 分析の画面から戻った直後に「部位」を押すと、部位の見方に切り替わる。部位の名前の見出し（胸）は、部位の見方のときだけ出る
+        let partHeader = app.staticTexts["胸"]
+        XCTAssertFalse(partHeader.exists, "すべての見方で、部位の見出しが出ている")
         tap(button("部位"), "部位")
+        XCTAssertTrue(partHeader.waitToAppear(timeout: 3), "「部位」を押しても、部位の見方に切り替わらない")
         shot("14-ホーム-部位")
 
         tap(button("並べ替え"), "並べ替え")
