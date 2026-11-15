@@ -124,31 +124,36 @@ let dumbbell: [CGPath] = [
 /// どちらも 100×100 を部位の色の丸の大きさとして、丸の中に収まる位置に置く
 struct PartLayers {
     let name: String
-    let color: Int
+    /// ライト（白の背景）で使う色
+    let light: Int
+    /// ダークの背景で使う色
+    let dark: Int
     let base: [CGPath]
     let target: [CGPath]
 }
 
-func layers(_ name: String, color: Int, body pieces: [Piece]) -> PartLayers {
+func layers(_ name: String, light: Int, dark: Int, body pieces: [Piece]) -> PartLayers {
     // 頭や足先が丸の縁に掛からないよう、一回り小さくして中央に置く
     var t = CGAffineTransform(translationX: 10, y: 10).scaledBy(x: 0.8, y: 0.8)
     let placed = pieces.map { Piece(part: $0.part, path: $0.path.copy(using: &t)!) }
-    return PartLayers(name: name, color: color,
+    return PartLayers(name: name, light: light, dark: dark,
                       base: placed.filter { $0.part != name }.map(\.path),
                       target: placed.filter { $0.part == name }.map(\.path))
 }
 
+// ライトの色は、白の背景に沈まないよう、ダークより濃くする
 let partLayers: [PartLayers] = [
-    layers("chest", color: 0xd9b13b, body: frontBody),
-    layers("shoulder", color: 0x9b6dd6, body: frontBody),
-    layers("back", color: 0xb87333, body: backBody),
-    layers("arm", color: 0xc8445a, body: frontBody),
-    layers("abs", color: 0x4caf7a, body: frontBody),
-    layers("leg", color: 0x6ab0e0, body: legsBody),
+    layers("chest", light: 0xc79a12, dark: 0xd9b13b, body: frontBody),
+    layers("shoulder", light: 0x8656cc, dark: 0x9b6dd6, body: frontBody),
+    layers("back", light: 0xd9631c, dark: 0xf28a48, body: backBody),
+    layers("arm", light: 0xc23a52, dark: 0xd2566b, body: frontBody),
+    layers("abs", light: 0x2e9a63, dark: 0x4caf7a, body: frontBody),
+    layers("leg", light: 0x3a92cf, dark: 0x6ab0e0, body: legsBody),
     // その他は体にせず、ダンベルにする。横に長く両端が丸の縁に掛かるので、体より小さくする
     {
         var t = CGAffineTransform(translationX: 20, y: 20).scaledBy(x: 0.6, y: 0.6)
-        return PartLayers(name: "other", color: 0x8e8e96, base: [], target: dumbbell.map { $0.copy(using: &t)! })
+        return PartLayers(name: "other", light: 0x76767e, dark: 0x8e8e96, base: [],
+                          target: dumbbell.map { $0.copy(using: &t)! })
     }(),
 ]
 
@@ -272,13 +277,14 @@ func writePreview(to url: URL) throws {
     ctx.fill(CGRect(x: 0, y: 0, width: CGFloat(width) - appSize - gap, height: large + gap * 2.5))
     for (i, layer) in partLayers.enumerated() {
         let x = gap + CGFloat(i) * (large + gap)
-        // (y, 丸の濃さ, 体の濃さ)。Common.swift の PartIcon と同じ値
-        for (y, circle, base) in [(CGFloat(height) - gap - large, 0.18, 0.45), (gap * 1.2, 0.28, 0.55)] {
+        // (y, 色, 丸の濃さ, 体の濃さ)。Common.swift の PartIcon と同じ値
+        for (y, color, circle, base) in [(CGFloat(height) - gap - large, layer.light, 0.14, 0.32),
+                                         (gap * 1.2, layer.dark, 0.28, 0.55)] {
             let rect = CGRect(x: x, y: y, width: large, height: large)
-            ctx.setFillColor(rgb(layer.color, alpha: circle))
+            ctx.setFillColor(rgb(color, alpha: circle))
             ctx.fillEllipse(in: rect)
-            fill(layer.base, in: ctx, rect: rect, color: rgb(layer.color, alpha: base))
-            fill(layer.target, in: ctx, rect: rect, color: rgb(layer.color))
+            fill(layer.base, in: ctx, rect: rect, color: rgb(color, alpha: base))
+            fill(layer.target, in: ctx, rect: rect, color: rgb(color))
         }
     }
     ctx.saveGState()
@@ -301,7 +307,7 @@ if FileManager.default.fileExists(atPath: partDir.path) {
 }
 // 体の残りが無い部位(その他)にも空の画像を書き、画面の側がどの部位も同じ 2 枚を重ねられるようにする
 for layer in partLayers {
-    try writeColor(layer.color, name: "Part/\(layer.name)")
+    try writeColor(layer.light, dark: layer.dark, name: "Part/\(layer.name)")
     try writeTemplateImage(layer.base, name: "\(layer.name)-base")
     try writeTemplateImage(layer.target, name: "\(layer.name)-target")
 }
