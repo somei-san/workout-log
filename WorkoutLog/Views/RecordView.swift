@@ -345,7 +345,7 @@ struct RecordView: View {
                         EmptyView()
                     }
                     Spacer()
-                    Button("次へ", action: moveToNextField)
+                    Button(isLastFieldOfRow ? "閉じる" : "次へ", action: moveToNextField)
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.bordered)
@@ -422,21 +422,25 @@ struct RecordView: View {
         moveToNextField()
     }
 
-    /// 重さ → 回数 → 強度（出しているときだけ）→ 次の行の重さ、の順に次の欄へ移る。
-    /// 最後の行の最後の欄では、空の行を足して、その行の重さへ移る。セットを続けて打つときに、欄を押し直さずに済むようにするため
+    /// 重さ → 回数 → 強度（出しているときだけ）の順に次の欄へ移り、行の最後の欄ではキーボードを閉じる。
+    /// 1 セットを打ち終えたら、キーボードに隠れていた一覧を見渡せるようにするため
     private func moveToNextField() {
-        guard let focus, let i = model.index(of: focus.rowId) else { return }
+        guard let focus else { return }
         switch focus {
         case .weight(let id):
             self.focus = .reps(id)
         case .reps(let id) where intensity != .none:
             self.focus = .intensity(id)
         case .reps, .intensity:
-            if i + 1 < model.rows.count {
-                self.focus = .weight(model.rows[i + 1].id)
-            } else {
-                addRow()
-            }
+            self.focus = nil
+        }
+    }
+
+    private var isLastFieldOfRow: Bool {
+        switch focus {
+        case .intensity: true
+        case .reps: intensity == .none
+        case .weight, nil: false
         }
     }
 
