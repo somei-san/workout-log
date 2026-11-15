@@ -70,6 +70,12 @@ jobs:
           -destination "platform=iOS Simulator,OS=27.0,name=iPhone 17" -derivedDataPath build
           -skipPackageUpdates
 
+      # XCTest は UI テストの間ずっと画面を録画していて、テストの終わりに録画を止めるのを待つ。録画は落ちたテストを調べるときにしか
+      # 使わないので、xctestrun のシステムの添付を残さない設定にして、録画を始めさせない。スナップショットの画像はユーザーの添付で、この設定では消えない。
+      # project.yml のスキームで止めないのは、手元で回すときは録画を残したいから（手元もこのスキームで回す）
+      - name: UI テストの画面の録画を止める
+        run: plutil -replace WorkoutLogUITests.SystemAttachmentLifetime -string keepNever build/Build/Products/*.xctestrun
+
       # テストを回すシミュレーターは、スナップショットを手元と同じ条件で比べるため、手元で撮るときと同じスクリプトで
       # iOS 27.0 の iPhone 17 の専用のものを用意する
       - name: シミュレーターを起動する
