@@ -334,20 +334,26 @@ struct RecordView: View {
                     case .weight:
                         Button(copyAboveLabel(rowAbove?.weightValue.map(Format.weight)), action: copyWeightAbove)
                             .disabled(rowAbove?.weightValue == nil)
-                        Button("−2.5") { adjustWeight(-2.5) }
-                        Button("＋2.5") { adjustWeight(2.5) }
+                            // ボタンは縮めない。縮められるままだと、右の Spacer に幅が余っていても、文字の大きいときにこのボタンの文字が 2 行に折り返す
+                            .fixedSize()
+                        Button("−2.5") { adjustWeight(-2.5) }.fixedSize()
+                        Button("＋2.5") { adjustWeight(2.5) }.fixedSize()
                     case .reps:
                         Button(copyAboveLabel(rowAbove?.repsValue.map(String.init)), action: copyRepsAbove)
                             .disabled(rowAbove?.repsValue == nil)
-                        Button("−1") { adjustReps(-1) }
-                        Button("＋1") { adjustReps(1) }
+                            .fixedSize()
+                        Button("−1") { adjustReps(-1) }.fixedSize()
+                        Button("＋1") { adjustReps(1) }.fixedSize()
                     case .intensity:
                         EmptyView()
                     }
                     Spacer()
                     Button(isLastFieldOfRow ? "閉じる" : "次へ", action: moveToNextField)
                         .fontWeight(.semibold)
+                        .fixedSize()
                 }
+                // ボタンを縮めないので、文字が大きいと 4 つのボタンが横幅をはみ出し、画面全体が横にずれる。xxLarge でもはみ出す
+                .dynamicTypeSize(...DynamicTypeSize.xLarge)
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.capsule)
                 .padding(8)
@@ -364,7 +370,6 @@ struct RecordView: View {
     /// 1 つ上の行の値を写すボタンの文字。写す値があれば「前回 102.5」の形でその値を出す。押す前に、何が入るか分かるようにするため。
     /// 「前回と同じ（102.5）」のように値を後ろに添えると長く、キーボードの上のボタンの並びが折り返す
     private func copyAboveLabel(_ value: String?) -> LocalizedStringKey {
-        // String で返すと、文字の大きいときに「前回と同じ」を「前回と／同じ」で折り返す。LocalizedStringKey なら「前回／と同じ」になる
         if let value { "前回 \(value)" } else { "前回と同じ" }
     }
 
