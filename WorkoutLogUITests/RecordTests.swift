@@ -28,6 +28,20 @@ final class RecordTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["記録がありません"].waitToAppear(timeout: 5))
     }
 
+    func testセットを追加する行の右の空いたところを押しても_セットを足さない() throws {
+        try recordOneSet()
+        let fields = app.textFields.matching(identifier: "重さと回数")
+        let count = fields.count
+        let add = app.buttons["＋ セットを追加"]
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: app.frame.maxX - 24, dy: add.frame.midY))
+            .tap()
+        XCTAssertFalse(fields.element(boundBy: count).waitForExistence(timeout: 2), "行の右の空いたところでセットが足された")
+
+        add.tap()
+        XCTAssertTrue(fields.element(boundBy: count + 1).waitToAppear(timeout: 5), "「＋ セットを追加」を押してもセットが足されない")
+    }
+
     func test前日以前の記録は閲覧モードで開き_編集と完了で切り替わる() throws {
         try recordOneSet(languageIsEnglish: true)
         let dateButton = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "▾")).firstMatch
