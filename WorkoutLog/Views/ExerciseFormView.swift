@@ -4,6 +4,7 @@ import SwiftUI
 struct ExerciseFormView: View {
     @Environment(\.appDatabase) private var database
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State var exercise: Exercise
 
     private var isNew: Bool { exercise.id == nil }
@@ -19,6 +20,7 @@ struct ExerciseFormView: View {
                 Section("部位") {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                         ForEach(Part.allCases, id: \.self) { part in
+                            let isSelected = exercise.part == part
                             Button {
                                 exercise.part = part
                             } label: {
@@ -27,14 +29,25 @@ struct ExerciseFormView: View {
                                     PartIcon(part: part)
                                         .accessibilityHidden(true)
                                     Text(part.label)
+                                        .fontWeight(isSelected ? .bold : .regular)
                                     Spacer(minLength: 0)
+                                    if isSelected {
+                                        // 選んでいることは、ボタンに付けた選択中の状態（accessibilityAddTraits）で読み上げる
+                                        Image(systemName: "checkmark")
+                                            .fontWeight(.bold)
+                                            .foregroundStyle(part.color)
+                                            .accessibilityHidden(true)
+                                    }
                                 }
                                 .padding(.horizontal, 12)
                                 .frame(minHeight: 52)
-                                .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
+                                // ダークでは背景が暗く、薄い色が沈むので、部位のアイコンの丸と同じく地を濃くする
+                                .background(isSelected ? AnyShapeStyle(part.color.opacity(colorScheme == .dark ? 0.28 : 0.16))
+                                                       : AnyShapeStyle(Color(.secondarySystemBackground)),
+                                            in: .rect(cornerRadius: 10))
                                 .overlay {
-                                    if exercise.part == part {
-                                        RoundedRectangle(cornerRadius: 10).stroke(Color.accentColor, lineWidth: 2)
+                                    if isSelected {
+                                        RoundedRectangle(cornerRadius: 10).stroke(part.color, lineWidth: 2)
                                     }
                                 }
                             }
