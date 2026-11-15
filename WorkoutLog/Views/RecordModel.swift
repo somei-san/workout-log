@@ -144,15 +144,21 @@ final class RecordModel {
         persist(i)
     }
 
+    /// 重さを delta だけ増減する。欄が空なら 1 つ上の行の重さから、それも無ければ 0 から増減する。
+    /// 前のセットの値を起点に、少し変えたセットを打てるようにするため
     func adjustWeight(_ rowId: UUID, by delta: Double) {
         guard let i = index(of: rowId) else { return }
-        rows[i].weight = Format.weight(max(0, (rows[i].weightValue ?? 0) + delta))
+        let base = rows[i].weightValue ?? rowAbove(rowId)?.weightValue ?? 0
+        rows[i].weight = Format.weight(max(0, base + delta))
         persist(i)
     }
 
+    /// 回数を delta だけ増減する。欄が空なら 1 つ上の行の回数から、それも無ければ 0 から増減する。
+    /// 前のセットの値を起点に、少し変えたセットを打てるようにするため
     func adjustReps(_ rowId: UUID, by delta: Int) {
         guard let i = index(of: rowId) else { return }
-        rows[i].reps = String(max(1, (rows[i].repsValue ?? 0) + delta))
+        let base = rows[i].repsValue ?? rowAbove(rowId)?.repsValue ?? 0
+        rows[i].reps = String(max(1, base + delta))
         persist(i)
     }
 
