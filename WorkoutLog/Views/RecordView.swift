@@ -332,12 +332,12 @@ struct RecordView: View {
                 HStack(spacing: 8) {
                     switch focus {
                     case .weight:
-                        Button("前回と同じ", action: copyWeightAbove)
+                        Button(copyAboveLabel(rowAbove?.weightValue.map(Format.weight)), action: copyWeightAbove)
                             .disabled(rowAbove?.weightValue == nil)
                         Button("−2.5") { adjustWeight(-2.5) }
                         Button("＋2.5") { adjustWeight(2.5) }
                     case .reps:
-                        Button("前回と同じ", action: copyRepsAbove)
+                        Button(copyAboveLabel(rowAbove?.repsValue.map(String.init)), action: copyRepsAbove)
                             .disabled(rowAbove?.repsValue == nil)
                         Button("−1") { adjustReps(-1) }
                         Button("＋1") { adjustReps(1) }
@@ -359,6 +359,13 @@ struct RecordView: View {
         .padding(.top, 12)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity)
+    }
+
+    /// 1 つ上の行の値を写すボタンの文字。写す値があれば「前回 102.5」の形でその値を出す。押す前に、何が入るか分かるようにするため。
+    /// 「前回と同じ（102.5）」のように値を後ろに添えると長く、キーボードの上のボタンの並びが折り返す
+    private func copyAboveLabel(_ value: String?) -> LocalizedStringKey {
+        // String で返すと、文字の大きいときに「前回と同じ」を「前回と／同じ」で折り返す。LocalizedStringKey なら「前回／と同じ」になる
+        if let value { "前回 \(value)" } else { "前回と同じ" }
     }
 
     private func setNumber(_ number: Int) -> some View {
