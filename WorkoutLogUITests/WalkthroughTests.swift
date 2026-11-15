@@ -117,8 +117,12 @@ final class WalkthroughTests: XCTestCase {
             XCTAssertLessThan(fields.element(boundBy: 4).frame.maxY, button("次へ").frame.minY, "打っている欄がボタンに隠れる")
             shot("09b-記録-足した行")
             // メモを打つときも、欄がキーボードに隠れない。
-            // キーパッドが出ている間は、メモの欄がキーパッドの裏にあって押せないので、閉じてから押す
-            try app.closeKeyboard()
+            // キーパッドが出ている間は、メモの欄がキーパッドの裏にあって押せないので、閉じてから押す。
+            // 閉じるのは、一覧を上から画面の下の端までなぞって行う。なぞった指にキーパッドがついて下がり、下の端まで下げると閉じる
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+                .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)),
+                       withVelocity: 300, thenHoldForDuration: 0.3)
+            XCTAssertTrue(app.keyboards.firstMatch.waitToDisappear(timeout: 3), "一覧を下へなぞってもキーボードが閉じない")
             let memo = app.textFields["メモ"]
             tap(memo, "メモ")
             memo.typeText("メモ")

@@ -72,6 +72,8 @@ struct RecordView: View {
     @FocusState private var focus: Field?
     @FocusState private var isMemoFocused: Bool
     @State private var isKeyboardShown = false
+    /// 最後に入っていた数字の欄。メモではボタンを出さないので、メモに入ったら nil にする
+    @State private var lastFocus: Field?
     private let memoId = "memo"
     /// 欄の最小の幅。重さは「102.5」、回数は 1 桁が収まる幅。RPE は押しやすいよう 44pt 取る。文字の大きさの設定に合わせて広げる。
     /// 重さは行ごとに数字の右端がそろうよう広めに取り、回数は「×」と数字が離れないよう狭く取る
@@ -148,6 +150,8 @@ struct RecordView: View {
             }
         }
         .listStyle(.plain)
+        // キーボードが閉じ始めるのは、なぞる指がキーボードの上端に触れてから。キーボードより上でなぞる間は閉じないので、打ちながら上のセットを見返せる
+        .scrollDismissesKeyboard(.interactively)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -182,13 +186,15 @@ struct RecordView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if isKeyboardShown && model.isEditing {
                 keyboardBar
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-            isKeyboardShown = true
+        // ボタンの並びは、キーボードと同じ時間をかけて出し入れする。すぐに出し入れすると、キーボードがまだ動いている間に並びだけが現れたり消えたりする
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
+            withAnimation(Self.keyboardAnimation(note)) { isKeyboardShown = true }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            isKeyboardShown = false
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { note in
+            withAnimation(Self.keyboardAnimation(note)) { isKeyboardShown = false }
         }
         .dismissesKeyboardOnTapOutside()
         .sheet(isPresented: $isChoosingDate) {
@@ -227,6 +233,10 @@ struct RecordView: View {
             if let old, old.rowId != new?.rowId {
                 model.restoreIfCleared(old.rowId)
             }
+            if let new { lastFocus = new }
+        }
+        .onChange(of: isMemoFocused) { _, isFocused in
+            if isFocused { lastFocus = nil }
         }
     }
 
@@ -328,9 +338,9 @@ struct RecordView: View {
     /// メモではボタンを出さず、余白だけを取る。打っている行がキーボードにくっつかないようにするため
     private var keyboardBar: some View {
         VStack(spacing: 0) {
-            if let focus {
+            if let barFocus {
                 HStack(spacing: 8) {
-                    switch focus {
+                    switch barFocus {
                     case .weight:
                         Button(copyAboveLabel(rowAbove?.weightValue.map(Format.weight)), action: copyWeightAbove)
                             .disabled(rowAbove?.weightValue == nil)
@@ -448,17 +458,29 @@ struct RecordView: View {
         }
     }
 
+    /// ボタンの並びに出すボタンを決める欄。キーボードが閉じ始めると focus は nil になるが、並びはキーボードと一緒に下がり終えるまで、閉じる前の欄のボタンを出しておく
+    private var barFocus: Field? {
+        focus ?? lastFocus
+    }
+
     private var isLastFieldOfRow: Bool {
-        switch focus {
+        switch barFocus {
         case .intensity: true
         case .reps: intensity == .none
         case .weight, nil: false
         }
     }
 
-    /// 打っている行の 1 つ上の行
+    /// ボタンの並びに出している欄の、1 つ上の行
     private var rowAbove: SetRow? {
-        focus.flatMap { model.rowAbove($0.rowId) }
+        barFocus.flatMap { model.rowAbove($0.rowId) }
+    }
+
+    /// キーボードの通知に入っている、キーボードが動く時間で進むアニメーション
+    private static func keyboardAnimation(_ note: Notification) -> Animation {
+        // 通知に時間が入っていないときは、iOS のキーボードがふだん動く時間にする
+        let duration = note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0.25
+        return .easeInOut(duration: duration)
     }
 
     /// 行を消す。最後のセットのときは記録ごと消えるので、消さずに確認を出す
