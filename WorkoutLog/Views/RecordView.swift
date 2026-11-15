@@ -124,9 +124,15 @@ struct RecordView: View {
                     }
                 }
                 if model.isEditing {
-                    Button("＋ セットを追加", action: addRow)
-                        .frame(minHeight: 44)
-                        .listRowSeparator(.hidden)
+                    // List の中のボタンは、buttonStyle を指定しないと行の全体が押せる範囲になり、右の空いたところを押しても足される。
+                    // borderless は文字がアクセントの色になるので、plain にする
+                    Button(action: addRow) {
+                        Text("＋ セットを追加")
+                            .frame(minHeight: 44)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
                 }
             }
             Section("メモ") {
