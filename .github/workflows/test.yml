@@ -3,7 +3,15 @@ name: test
 on:
   push:
     branches: [main]
+  # アプリのビルドにもテストの実行にも使わないファイルだけを変えた PR は、アプリもテストも main と同じで、
+  # 回しても結果が変わらないので回さない。ここにはそういうファイルだけを足す。
+  # main に必須のチェックを置くと、回さなかった PR のチェックが待ちのまま残ってマージできなくなる
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '.gitignore'
+      - 'scripts/test.sh'
+      - 'scripts/make-icons.swift'
 
 # PR は最新の push の結果だけ見ればよいので、前の実行を止める。
 # main は push ごとに結果を残したいので、実行ごとに別のグループにして、待っている実行も取り消させない
