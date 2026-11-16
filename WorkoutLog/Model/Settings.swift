@@ -4,6 +4,22 @@ import Foundation
 enum SettingsKey {
     static let intensity = "intensity"
     static let historyColumns = "history.columns"
+    static let appearance = "appearance"
+}
+
+/// アプリの外観
+enum Appearance: String, CaseIterable, Sendable {
+    case system, light, dark
+
+    static let initial = Appearance.system
+
+    var label: String {
+        switch self {
+        case .system: "端末に合わせる"
+        case .light: "ライト"
+        case .dark: "ダーク"
+        }
+    }
 }
 
 /// 記録の入力欄に出す強度の種類
