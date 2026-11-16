@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(\.appDatabase) private var database
     @AppStorage(SettingsKey.intensity) private var intensity = IntensityKind.initial
     @AppStorage(SettingsKey.historyColumns) private var columnsRaw = HistoryColumn.initialRaw
+    @AppStorage(SettingsKey.appearance) private var appearance = Appearance.initial
     @State private var document: CSVDocument?
     @State private var isExporting = false
 
@@ -12,6 +13,27 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            // アプリの全体に効くので、記録の入力欄や種目の履歴の表示項目より先に置く
+            Section("外観") {
+                ForEach(Appearance.allCases, id: \.self) { item in
+                    Button {
+                        appearance = item
+                    } label: {
+                        HStack(spacing: 12) {
+                            AppearanceDot(appearance: item)
+                            Text(item.label)
+                                .foregroundStyle(Color.primary)
+                            Spacer(minLength: 0)
+                            if appearance == item {
+                                Image(systemName: "checkmark")
+                                    .fontWeight(.semibold)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                    }
+                    .accessibilityAddTraits(appearance == item ? .isSelected : [])
+                }
+            }
             Section("記録の入力欄") {
                 Picker("強度", selection: $intensity) {
                     ForEach(IntensityKind.allCases, id: \.self) { kind in
@@ -48,6 +70,34 @@ struct SettingsView: View {
         } set: { isOn in
             if let columns = HistoryColumn.toggled(columns, column, isOn: isOn) {
                 columnsRaw = HistoryColumn.encode(columns)
+            }
+        }
+    }
+
+    private struct AppearanceDot: View {
+        let appearance: Appearance
+
+        var body: some View {
+            ZStack {
+                Circle().fill(appearance == .dark ? Color.black : Color.white)
+                if appearance == .system {
+                    LowerRightHalf().fill(Color.black)
+                }
+            }
+            .clipShape(Circle())
+            .overlay { Circle().stroke(Color(.systemGray3), lineWidth: 1) }
+            .frame(width: 22, height: 22)
+            .accessibilityHidden(true)
+        }
+    }
+
+    private struct LowerRightHalf: Shape {
+        func path(in rect: CGRect) -> Path {
+            Path { path in
+                path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+                path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+                path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+                path.closeSubpath()
             }
         }
     }
