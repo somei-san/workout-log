@@ -172,7 +172,13 @@ class SnapshotTests: XCTestCase {
         XCTAssertTrue(app.buttons["BackButton"].firstMatch.waitToAppear(timeout: 5), "設定の画面に移らない")
         snapshot("3-settings")
 
-        button("データを読み込む").tap()
+        // 「データを読み込む」が画面の下の外にあると、押せないことがある。押せる位置に来るまで送る。
+        // 送る回数に上限を置くのは、送っても押せる位置に来ないときに、送り続けずに押して落とすため
+        let csvImport = button("データを読み込む")
+        for _ in 0..<3 where !csvImport.isHittable {
+            app.swipeUp()
+        }
+        csvImport.tap()
         XCTAssertTrue(app.navigationBars["CSV の読み込み"].waitToAppear(timeout: 5), "CSV の読み込みの画面に移らない")
         snapshot("4-csv-import")
 
