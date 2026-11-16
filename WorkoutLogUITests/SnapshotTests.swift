@@ -253,6 +253,70 @@ class SnapshotTests: XCTestCase {
         button("この種目の分析").tap()
         snapshot("4-analysis")
     }
+
+    /// ホームの並べ替えのメニュー・種目の長押しのメニュー・種目の削除の画面を、1 回の起動で続けて撮る。
+    /// 画面を順に進めるので、途中で XCTFail で返ると、後の画面は撮らない
+    func testHomeMenusAndExerciseDelete() {
+        launch(exercises: [("ベンチプレス", "chest"), ("スクワット", "leg")])
+        button("並べ替え").tap()
+        guard button("経過日数：降順").waitToAppear(timeout: 5) else { return XCTFail("並べ替えのメニューが出ない") }
+        snapshot("1-sort-menu")
+
+        // 今の並べ方を選び直して閉じる。文字が大きいと、メニューが画面の下の方まで覆う
+        button("経過日数：降順").tap()
+        guard button("経過日数：降順").waitToDisappear(timeout: 5) else { return XCTFail("並べ替えのメニューが閉じない") }
+        app.card("ベンチプレス").press(forDuration: 1.5)
+        // 「種目の設定」は種目の履歴の画面にもあるので、長押しのメニューにだけある「非表示」で確かめる
+        guard button("非表示").waitToAppear(timeout: 5) else { return XCTFail("長押しのメニューが出ない") }
+        snapshot("2-context-menu")
+
+        button("削除").tap()
+        guard app.navigationBars["種目を削除"].waitToAppear(timeout: 5) else { return XCTFail("種目の削除の画面が出ない") }
+        snapshot("3-exercise-delete")
+    }
+
+    /// 前日以前の記録の閲覧モードと編集モード・種目の履歴で 1 回の記録を消す確認を、1 回の起動で続けて撮る。
+    /// 画面を順に進めるので、途中で XCTFail で返るか throw すると、後の画面は撮らない
+    func testPastRecordAndRecordDelete() throws {
+        launch(exercises: [("ベンチプレス", "chest")])
+        app.card("ベンチプレス").tap()
+        app.buttons["新しい記録"].tap()
+        XCTAssertTrue(app.buttons["＋ セットを追加"].waitToAppear(timeout: 5))
+        try app.addSet(weight: "100", reps: "5")
+        try app.addSet(weight: "100", reps: "4")
+
+        // 日付を前の月の 15 日にする。起動引数で今日を決めているので、撮る記録の日付は毎回同じになる
+        app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "▾")).firstMatch.tap()
+        let picker = app.datePickers.firstMatch
+        guard picker.waitToAppear(timeout: 5) else { return XCTFail("日付のシートが出ない") }
+        picker.buttons["DatePicker.PreviousMonth"].tap()
+        // 日のボタンの読み上げの名前は、アプリの言語を日本語にしても「Monday, December 15」の形で付く
+        let day = picker.buttons.matching(NSPredicate(format: "label ENDSWITH %@", " 15")).firstMatch
+        guard day.waitToAppear(timeout: 5) else { return XCTFail("前の月の 15 日が無い") }
+        day.tap()
+        button("完了").tap()
+        guard picker.waitToDisappear(timeout: 5) else { return XCTFail("完了で日付のシートが閉じない") }
+
+        back()
+        // ボリューム・推定 1RM・最大重量の行
+        let summary = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "900 ")).firstMatch
+        guard summary.waitToAppear(timeout: 5) else { return XCTFail("種目の履歴に記録が出ない") }
+        summary.tap()
+        guard app.buttons["編集"].waitToAppear(timeout: 5) else { return XCTFail("前日以前の記録が閲覧モードで開かない") }
+        snapshot("1-view-mode")
+
+        app.buttons["編集"].tap()
+        guard app.buttons["＋ セットを追加"].waitToAppear(timeout: 5) else { return XCTFail("編集モードに切り替わらない") }
+        snapshot("2-edit-mode")
+
+        app.buttons["完了"].tap()
+        guard app.buttons["編集"].waitToAppear(timeout: 5) else { return XCTFail("閲覧モードに戻らない") }
+        back()
+        guard summary.waitToAppear(timeout: 5) else { return XCTFail("種目の履歴に戻らない") }
+        app.swipeToDelete(summary)
+        guard app.buttons["記録を削除"].waitToAppear(timeout: 5) else { return XCTFail("記録を消す確認が出ない") }
+        snapshot("3-record-delete")
+    }
 }
 
 final class DarkSnapshotTests: SnapshotTests {
