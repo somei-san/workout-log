@@ -22,8 +22,8 @@ struct PartIcon: View {
         // テンプレート画像 1 枚には 1 色しか付けられないので、体の残りと鍛える部位を別の画像にして重ねる
         ZStack {
             Circle().fill(part.color.opacity(dark ? 0.28 : 0.14))
-            // ライトでは体の残りを薄くし、鍛える部位との差を付ける。差が小さいと、22pt のアイコンでは鍛える部位が埋もれる
-            layer("base").foregroundStyle(part.color.opacity(dark ? 0.55 : 0.32))
+            // 体の残りを薄くし、鍛える部位との差を付ける。差が小さいと、22pt のアイコンでは鍛える部位が埋もれる
+            layer("base").foregroundStyle(part.color.opacity(dark ? 0.35 : 0.20))
             layer("target").foregroundStyle(part.color)
         }
         .frame(width: 22, height: 22)

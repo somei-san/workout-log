@@ -141,14 +141,15 @@ func layers(_ name: String, light: Int, dark: Int, body pieces: [Piece]) -> Part
                       target: placed.filter { $0.part == name }.map(\.path))
 }
 
-// ライトの色は、白の背景に沈まないよう、ダークより濃くする
+// ライトの色は、白の背景に沈まないよう、ダークより濃くする。
+// 胸・背中・脚は、互いに系統の違う黄・赤紫・水色にし、3 つを並べたときに見分けやすくする
 let partLayers: [PartLayers] = [
-    layers("chest", light: 0xc79a12, dark: 0xd9b13b, body: frontBody),
-    layers("shoulder", light: 0x8656cc, dark: 0x9b6dd6, body: frontBody),
-    layers("back", light: 0xd9631c, dark: 0xf28a48, body: backBody),
-    layers("arm", light: 0xc23a52, dark: 0xd2566b, body: frontBody),
+    layers("chest", light: 0x9e7600, dark: 0xd9b13b, body: frontBody),
+    layers("shoulder", light: 0x4f5bd5, dark: 0x8590f0, body: frontBody),
+    layers("back", light: 0xb5307a, dark: 0xe86aae, body: backBody),
+    layers("arm", light: 0xd0631a, dark: 0xf0904a, body: frontBody),
     layers("abs", light: 0x2e9a63, dark: 0x4caf7a, body: frontBody),
-    layers("leg", light: 0x3a92cf, dark: 0x6ab0e0, body: legsBody),
+    layers("leg", light: 0x0f8299, dark: 0x3fc0d6, body: legsBody),
     // その他は体にせず、ダンベルにする。横に長く両端が丸の縁に掛かるので、体より小さくする
     {
         var t = CGAffineTransform(translationX: 20, y: 20).scaledBy(x: 0.6, y: 0.6)
@@ -278,8 +279,8 @@ func writePreview(to url: URL) throws {
     for (i, layer) in partLayers.enumerated() {
         let x = gap + CGFloat(i) * (large + gap)
         // (y, 色, 丸の濃さ, 体の濃さ)。Common.swift の PartIcon と同じ値
-        for (y, color, circle, base) in [(CGFloat(height) - gap - large, layer.light, 0.14, 0.32),
-                                         (gap * 1.2, layer.dark, 0.28, 0.55)] {
+        for (y, color, circle, base) in [(CGFloat(height) - gap - large, layer.light, 0.14, 0.20),
+                                         (gap * 1.2, layer.dark, 0.28, 0.35)] {
             let rect = CGRect(x: x, y: y, width: large, height: large)
             ctx.setFillColor(rgb(color, alpha: circle))
             ctx.fillEllipse(in: rect)
