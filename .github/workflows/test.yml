@@ -38,7 +38,7 @@ jobs:
             unit: true
             ui: -only-testing:WorkoutLogUITests/DarkSnapshotTests -only-testing:WorkoutLogUITests/LargeTextSnapshotTests
           - name: 種目の操作と見た目のダーク・XXXL
-            ui: -only-testing:WorkoutLogUITests/ExerciseTests -only-testing:WorkoutLogUITests/DarkLargeTextSnapshotTests
+            ui: -only-testing:WorkoutLogUITests/ExerciseTests -only-testing:WorkoutLogUITests/PartReorderTests -only-testing:WorkoutLogUITests/DarkLargeTextSnapshotTests
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
     steps:

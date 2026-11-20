@@ -13,6 +13,13 @@ struct HomeView: View {
     /// 並べ方は見方ごとに覚えておく
     @AppStorage("home.sort.all") private var sortAll = SortRule.elapsedDesc
     @AppStorage("home.sort.part") private var sortPart = SortRule.elapsedDesc
+    @AppStorage(SettingsKey.partOrder) private var partOrder = ""
+    /// 部位を並べ替えている間の状態。並べ替えていなければ nil
+    @State private var reorder: PartReorder?
+    /// 並べ替えの間、ドラッグが続いているか。ドラッグが終わるか取り消されると false に戻る
+    @GestureState private var isReordering = false
+    /// 並べ替えの間に出す部位の帯の高さ。文字の大きさの設定に合わせて変える
+    @ScaledMetric private var bandHeight: CGFloat = 46
     /// 経過日数の基準。日をまたいでアプリに戻ったときに数え直すため、状態で持つ
     @State private var today = LocalDay.today()
     @State private var cards: [ExerciseCard] = []
@@ -30,17 +37,10 @@ struct HomeView: View {
                 case .all:
                     grid(visible)
                 case .part:
-                    ForEach(rule.partOrder(visible), id: \.self) { part in
-                        let group = visible.filter { $0.exercise.part == part }
-                        if !group.isEmpty {
-                            Text(part.label)
-                                .font(.footnote.bold())
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal)
-                                .padding(.top, 8)
-                            grid(group)
-                        }
+                    let groups = Dictionary(grouping: visible, by: \.exercise.part)
+                    let parts = PartOrder.decode(partOrder).filter { groups[$0] != nil }
+                    ForEach(parts.indices, id: \.self) { i in
+                        partSection(parts[i], groups[parts[i]]!, index: i, parts: parts, groups: groups)
                     }
                 }
                 let hidden = rule.sorted(cards.filter(\.exercise.isHidden), today: today)
@@ -53,6 +53,22 @@ struct HomeView: View {
                     .padding(.vertical, 12)
                 }
             }
+            // 並べ替えの間は、種目のグリッドを隠し、部位の帯だけを上に並べる。
+            // グリッドは消さずに透明にする。消すと、ドラッグを受けている部位の名前も消え、ドラッグが途切れるため
+            .opacity(reorder == nil ? 1 : 0)
+            .scrollDisabled(reorder != nil)
+            .overlay {
+                if let reorder {
+                    PartReorderView(reorder: reorder)
+                        .allowsHitTesting(false)
+                }
+            }
+            .onChange(of: isReordering) {
+                if !isReordering { finishReorder() }
+            }
+            .sensoryFeedback(.impact, trigger: reorder != nil) { _, isOn in isOn }
+            // 始めたときと離したときは、入る位置が変わったのではないので振動しない
+            .sensoryFeedback(.selection, trigger: reorder?.target) { old, new in old != nil && new != nil }
             .overlay {
                 if cards.isEmpty {
                     ContentUnavailableView("種目がありません", systemImage: "dumbbell", description: Text("右上の「＋」で種目を追加します"))
@@ -136,6 +152,65 @@ struct HomeView: View {
         }
         .pickerStyle(.segmented)
         .fixedSize()
+    }
+
+    /// 部位の名前と種目のグリッドをまとめた区切り。名前を長押しすると並べ替えを始める。
+    /// parts と groups は、種目の無い部位を除いた、画面に出ている部位とその種目
+    private func partSection(_ part: Part, _ cards: [ExerciseCard], index: Int, parts: [Part], groups: [Part: [ExerciseCard]]) -> some View {
+        VStack {
+            Text(part.label)
+                .font(.footnote.bold())
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .contentShape(.rect)
+                .gesture(reorderGesture(part, index: index, parts: parts, groups: groups))
+                // ドラッグできない VoiceOver でも並べ替えられるようにする
+                .accessibilityActions {
+                    if index > 0 {
+                        Button("前へ移動") { save(parts.moving(from: index, to: index - 1)) }
+                    }
+                    if index + 1 < parts.count {
+                        Button("後ろへ移動") { save(parts.moving(from: index, to: index + 1)) }
+                    }
+                }
+            grid(cards)
+        }
+    }
+
+    /// 部位の名前を長押しして、そのまま上下にドラッグする操作
+    private func reorderGesture(_ part: Part, index: Int, parts: [Part], groups: [Part: [ExerciseCard]]) -> some Gesture {
+        LongPressGesture(minimumDuration: 0.3)
+            .sequenced(before: DragGesture(minimumDistance: 0))
+            .updating($isReordering) { value, state, _ in
+                if case .second(true, _) = value { state = true }
+            }
+            .onChanged { value in
+                guard case .second(true, let drag) = value else { return }
+                if reorder == nil {
+                    let bands = parts.map { PartReorder.Band(part: $0, names: groups[$0, default: []].map(\.exercise.name)) }
+                    // 文字を大きくしても、7 部位の帯が 1 画面に収まる高さにとどめる
+                    let height = min(bandHeight, 64)
+                    withAnimation(.snappy) { reorder = PartReorder(bands: bands, held: part, start: index, bandHeight: height) }
+                }
+                guard let moved = drag?.translation.height, let target = reorder?.target(moved: moved) else { return }
+                reorder?.moved = moved
+                if target != reorder?.target {
+                    withAnimation(.snappy) { reorder?.target = target }
+                }
+            }
+    }
+
+    private func finishReorder() {
+        guard let reorder else { return }
+        save(reorder.order)
+        withAnimation(.snappy) { self.reorder = nil }
+    }
+
+    /// 画面に出ている部位の並びを、種目の無い部位を含む部位の並びに当てはめて保存する
+    private func save(_ visible: [Part]) {
+        partOrder = PartOrder.encode(PartOrder.applying(visible, to: PartOrder.decode(partOrder)))
     }
 
     private func grid(_ cards: [ExerciseCard]) -> some View {

@@ -1,6 +1,6 @@
 import GRDB
 
-/// 部位。並び順は、部位の見方で区切る順番
+/// 部位。並び順（allCases）は、部位の並び（PartOrder）の初期値。保存した並びに無い部位も、この順で後ろに付く
 enum Part: String, Codable, CaseIterable, Sendable {
     case chest, shoulder, back, arm, abs, leg, other
 
