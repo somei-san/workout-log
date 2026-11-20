@@ -6,6 +6,7 @@ struct ExerciseFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State var exercise: Exercise
+    @AppStorage(SettingsKey.partOrder) private var partOrder = ""
 
     private var isNew: Bool { exercise.id == nil }
     private var trimmedName: String { exercise.name.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -19,7 +20,7 @@ struct ExerciseFormView: View {
                 }
                 Section("部位") {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                        ForEach(Part.allCases, id: \.self) { part in
+                        ForEach(PartOrder.decode(partOrder), id: \.self) { part in
                             let isSelected = exercise.part == part
                             Button {
                                 exercise.part = part

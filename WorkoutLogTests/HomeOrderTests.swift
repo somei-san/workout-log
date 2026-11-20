@@ -66,26 +66,49 @@ struct HomeOrderTests {
         #expect(names(.frequency4wAsc, cards) == ["スクワット", "アームカール"])
     }
 
-    @Test func 部位の見方で経過日数を選ぶと区切りは胸_肩_背中_腕_腹_足_その他の順() throws {
-        let order: [Part] = [.chest, .shoulder, .back, .arm, .abs, .leg, .other]
-        #expect(SortRule.elapsedDesc.partOrder(try sample()) == order)
-        #expect(SortRule.elapsedAsc.partOrder(try sample()) == order)
+    @Test func 部位を並べ替える前は胸_肩_背中_腕_腹_足_その他の順() {
+        let order = PartOrder.decode("")
         #expect(order.map(\.label) == ["胸", "肩", "背中", "腕", "腹", "足", "その他"])
     }
 
-    @Test func 部位の見方で頻度を選ぶと区切りは部位の頻度の合計で並べ_合計が同じなら胸から順() throws {
-        let cards = try sample()
-        #expect(SortRule.frequency3mDesc.partOrder(cards) == [.leg, .chest, .arm, .shoulder, .back, .abs, .other])
-        #expect(SortRule.frequency3mAsc.partOrder(cards) == [.shoulder, .back, .abs, .other, .arm, .chest, .leg])
+    @Test func 保存した部位の並びに無い部位と読めない値は_無い部位を元の順で後ろに付ける() {
+        #expect(PartOrder.decode("leg,unknown,chest,leg") == [.leg, .chest, .shoulder, .back, .arm, .abs, .other])
     }
 
-    @Test func 部位の頻度の合計に非表示の種目は含めない() throws {
-        // 足の合計は、非表示のレッグプレスを含めると 4 で胸の 3 より多いが、含めなければ 1
-        var cards = try cards([("ベンチプレス", .chest, [1, 2, 3]), ("スクワット", .leg, [1]), ("レッグプレス", .leg, [1, 2, 3])])
-        #expect(SortRule.frequency4wDesc.partOrder(cards).prefix(2) == [.leg, .chest])
-        let i = try #require(cards.firstIndex { $0.exercise.name == "レッグプレス" })
-        cards[i].exercise.isHidden = true
-        #expect(SortRule.frequency4wDesc.partOrder(cards).prefix(2) == [.chest, .leg])
+    @Test func 部位の並びは保存した形から同じ並びに読み戻せる() {
+        let order: [Part] = [.other, .leg, .abs, .arm, .back, .shoulder, .chest]
+        #expect(PartOrder.decode(PartOrder.encode(order)) == order)
+    }
+
+    @Test func 画面に出ている部位の並べ替えは_出ていない部位の位置を変えずに当てはめる() {
+        // 肩・腹・その他は種目が無く、画面に出ていない
+        let order = PartOrder.decode("")
+        #expect(PartOrder.applying([.back, .chest, .arm, .leg], to: order) == [.back, .shoulder, .chest, .arm, .abs, .leg, .other])
+    }
+
+    @Test func 画面の並びを変えずに当てはめても部位の並びは変わらない() {
+        let order: [Part] = [.leg, .chest, .shoulder, .back, .arm, .abs, .other]
+        #expect(PartOrder.applying([.leg, .back], to: order) == order)
+    }
+
+    @Test func 持っている部位は離した位置に入り_ほかの部位はその分ずれる() {
+        let bands = [Part.chest, .back, .leg].map { PartReorder.Band(part: $0, names: []) }
+        var reorder = PartReorder(bands: bands, held: .chest, start: 0, bandHeight: 46)
+        reorder.target = 2
+        #expect(reorder.order == [.back, .leg, .chest])
+        reorder.target = 1
+        #expect(reorder.order == [.back, .chest, .leg])
+    }
+
+    @Test func 帯の半分を超えて動かすと隣の位置に入り_並びの外へ動かすと端の位置に入る() {
+        let bands = [Part.chest, .back, .leg].map { PartReorder.Band(part: $0, names: []) }
+        let reorder = PartReorder(bands: bands, held: .back, start: 1, bandHeight: 46)
+        // 帯の間隔は 46 + 6 = 52
+        #expect(reorder.target(moved: 25) == 1)
+        #expect(reorder.target(moved: 27) == 2)
+        #expect(reorder.target(moved: -27) == 0)
+        #expect(reorder.target(moved: 1000) == 2)
+        #expect(reorder.target(moved: -1000) == 0)
     }
 
     @Test func カードは最後の1回の記録の日付を記録した場所の時刻で出す() throws {

@@ -5,6 +5,34 @@ enum SettingsKey {
     static let intensity = "intensity"
     static let historyColumns = "history.columns"
     static let appearance = "appearance"
+    static let partOrder = "partOrder"
+}
+
+/// 部位の並び。ホームの部位の見方の区切りと、種目の追加・設定の部位のボタンが、この順を使う
+enum PartOrder {
+    /// UserDefaults に保存する形("leg,chest,...")から読む。
+    /// 保存した中に無い部位（部位を足したときなど）は、Part の順で後ろに付ける
+    static func decode(_ raw: String) -> [Part] {
+        var order: [Part] = []
+        for part in raw.split(separator: ",").compactMap({ Part(rawValue: String($0)) }) where !order.contains(part) {
+            order.append(part)
+        }
+        return order + Part.allCases.filter { !order.contains($0) }
+    }
+
+    static func encode(_ order: [Part]) -> String {
+        order.map(\.rawValue).joined(separator: ",")
+    }
+
+    /// order のうち visible に入っている部位を、visible の順に並べ直した並び。
+    /// 画面に出ていない部位（種目の無い部位）は、同じ位置に残す
+    static func applying(_ visible: [Part], to order: [Part]) -> [Part] {
+        var rest = visible[...]
+        return order.map { part in
+            guard visible.contains(part), let next = rest.popFirst() else { return part }
+            return next
+        }
+    }
 }
 
 /// アプリの外観
