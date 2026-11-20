@@ -11,7 +11,7 @@ enum SettingsKey {
 enum Appearance: String, CaseIterable, Sendable {
     case system, light, dark
 
-    static let initial = Appearance.system
+    static let initial = Appearance.dark
 
     var label: String {
         switch self {

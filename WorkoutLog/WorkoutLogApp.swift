@@ -38,9 +38,10 @@ private struct AppearanceModifier: ViewModifier {
     }
 
     private var style: UIUserInterfaceStyle {
-        // UI テストは、起動引数「-uiTestingDark YES」でダークの外観にする。
-        // シミュレーターの外観の設定は、変えてもアプリに届かないことがあるため
-        if Self.isUITestingDark { return .dark }
+        // UI テストは、起動引数「-uiTestingDark YES」でダーク、無ければライトの外観にする。
+        // シミュレーターの外観の設定は、変えてもアプリに届かないことがあるため。
+        // ライトも決めておくのは、撮る画面を外観の初期値に左右させないため
+        if Self.isUITesting { return Self.isUITestingDark ? .dark : .light }
         switch appearance {
         case .system: return .unspecified
         case .light: return .light
@@ -48,5 +49,6 @@ private struct AppearanceModifier: ViewModifier {
         }
     }
 
+    private static let isUITesting = ProcessInfo.processInfo.arguments.contains("-uiTesting")
     private static let isUITestingDark = UserDefaults.standard.bool(forKey: "uiTestingDark")
 }
