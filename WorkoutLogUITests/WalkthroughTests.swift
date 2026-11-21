@@ -185,7 +185,13 @@ final class WalkthroughTests: XCTestCase {
         tap(button("設定"), "設定")
         shot("17-設定")
 
-        tap(button("データを読み込む"), "データを読み込む")
+        // 「データを読み込む」が画面の下の外にあると、見つからないことがある。押せる位置に来るまで画面を上にスクロールする。
+        // スクロールする回数に上限を置くのは、スクロールしても押せる位置に来ないときに、続けずに押して落とすため
+        let csvImport = button("データを読み込む")
+        for _ in 0..<3 where !(csvImport.exists && csvImport.isHittable) {
+            app.swipeUp()
+        }
+        tap(csvImport, "データを読み込む")
         shot("18-CSVの読み込み")
         app.swipeUp()
         shot("19-CSVの読み込み-下")

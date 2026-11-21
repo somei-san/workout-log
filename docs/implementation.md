@@ -15,9 +15,9 @@
 
 | テーブル | 列 | 備考 |
 |---|---|---|
-| `exercise`(種目) | `id`, `name`, `part`, `isHidden`, `initialRowCount` | `initialRowCount` は最初に並べるセット数(0〜10) |
+| `exercise`(種目) | `id`, `name`, `part`, `isHidden`, `initialRowCount`, `showsElapsed` | `initialRowCount` は最初に並べるセット数(0〜10)、`showsElapsed` は記録の画面に最後のセットからの経過時間を出すか |
 | `record`(1 回の記録) | `id`, `exerciseId`, `performedAt`, `utcOffset`, `memo` | `performedAt` は UTC の日付と時刻、`utcOffset` は記録した場所の UTC との時差(分) |
-| `workoutSet`(セット) | `id`, `recordId`, `position`, `weight`, `reps`, `rpe`, `rir` | `position` は記録の中の順番 |
+| `workoutSet`(セット) | `id`, `recordId`, `position`, `weight`, `reps`, `rpe`, `rir`, `createdAt` | `position` は記録の中の順番、`createdAt` は重さと回数がそろってセットになった時刻(空のこともある) |
 
 ### 部位
 
@@ -46,6 +46,8 @@
 
 強度は `rpe` と `rir` を別の列で持つ。設定で強度の種類を切り替えても、過去の値の意味が混ざらないようにするため。
 
+`createdAt` は、セットを作るときに一度だけ入れ、値を直しても変えない。入れた時刻が分からないセット（`createdAt` の列を足す前のデータベースから移したセット、CSV から読み込んだセット）は空のままにする。いつ入れたか分からない時刻を、作った時刻で埋めないため。経過時間は、記録の画面がこの時刻から表示するときに計算する。
+
 ## マイグレーション
 
 Xcode から実機に入れるアプリはいつも DEBUG ビルドで、実機のデータベースには実際の記録が入る。そのため、次の 2 つを守る。
@@ -58,6 +60,7 @@ Xcode から実機に入れるアプリはいつも DEBUG ビルドで、実機�
 `UserDefaults`(アプリの設定を保存する iOS 標準の仕組み)に持つ。どれもデータベースの記録とは独立していて、消えても初期値に戻るだけで済むため。
 
 - 強度の欄: 非表示、RPE、RIR
+- 記録の画面に最後のセットからの経過時間を出すか。全種目に効く。種目ごとの設定はデータベースの `exercise.showsElapsed` に持つ
 - 種目の履歴の表示項目: ボリューム、推定 1RM、最大重量、トップセット、セット数のそれぞれの表示と非表示
 - ホームの並べ方: 「すべて」と「部位」の見方ごとに 1 つ
 - 部位の並び: 部位のコードをカンマでつないだ文字列。保存した中に無い部位は、enum の順で後ろに付けて読む。部位を足しても、並べ替えた順を保ったまま新しい部位が出るようにするため

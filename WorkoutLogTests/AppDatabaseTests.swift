@@ -10,6 +10,22 @@ struct AppDatabaseTests {
         database = try AppDatabase.empty()
     }
 
+    @Test func 入力時刻を持つ前のデータベースを移すと_セットの入力時刻は空で_種目は経過時間を出す() throws {
+        let queue = try DatabaseQueue()
+        try AppDatabase.migrator.migrate(queue, upTo: "v1")
+        try queue.write { db in
+            try db.execute(sql: "INSERT INTO exercise (name, part) VALUES ('ベンチプレス', 'chest')")
+            try db.execute(sql: "INSERT INTO record (exerciseId, performedAt, utcOffset) VALUES (1, '2026-11-20 10:00:00.000', 32400)")
+            try db.execute(sql: "INSERT INTO workoutSet (recordId, position, weight, reps) VALUES (1, 0, 60, 10)")
+        }
+
+        let migrated = try AppDatabase(queue)
+        let set = try migrated.reader.read { db in try WorkoutSet.fetchOne(db) }
+        let exercise = try migrated.reader.read { db in try Exercise.fetchOne(db) }
+        #expect(set?.createdAt == nil)
+        #expect(exercise?.showsElapsed == true)
+    }
+
     @Test func 種目を消すと記録とセットも消える() throws {
         try database.writer.write { db in
             var exercise = Exercise(name: "デッドリフト", part: .back)
