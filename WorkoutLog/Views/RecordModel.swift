@@ -32,6 +32,8 @@ final class RecordModel {
     var isEditing = true
     /// 前日以前の記録。閲覧モードで開く
     private(set) var isPast = false
+    /// 開いたときの今日。前日以前の記録かを、開いている間はこの日で決める
+    private var openedDay: LocalDay?
 
     @ObservationIgnored private var database: AppDatabase?
 
@@ -76,6 +78,7 @@ final class RecordModel {
         exercise = loaded.exercise
         record = loaded.record
         memo = loaded.record?.memo ?? ""
+        openedDay = today
         isPast = loaded.record?.isPast(today: today) ?? false
         isEditing = !isPast
         rows = loaded.record == nil
@@ -116,6 +119,21 @@ final class RecordModel {
     var lastSet: WorkoutSet? {
         rows.last { $0.saved != nil }?.saved
     }
+
+    /// 経過時間を測り始める時刻。いちばん下のセットの入力時刻で、出さないときは nil。
+    /// 出さないのは、種目の設定でオフのとき、いちばん下のセットが無いか入力時刻を持たないとき、
+    /// 画面を開いた日より前の日付の記録、1 時間以上経ったとき。
+    /// 前日以前と 1 時間以上は、トレーニングはもう終わっていて、入れ忘れに気づく助けにならないため
+    func elapsedStart(now: Date) -> Date? {
+        // 記録の日付は今の値で見る。開いた後に日付を移した記録を、移した先の日付で扱うため。
+        // 比べる相手は今日ではなく開いた日にする。開いている間に夜中の 0 時を過ぎても経過時間を消さず、1 時間の上限で区切るため
+        guard let openedDay, record?.isPast(today: openedDay) != true,
+              exercise?.showsElapsed == true, let start = lastSet?.createdAt,
+              now.timeIntervalSince(start) < Self.elapsedLimit else { return nil }
+        return start
+    }
+
+    static let elapsedLimit: TimeInterval = 60 * 60
 
     /// いちばん下のセットの重さと回数を写したセットを足す。写すセットが無ければ false を返す。
     /// RPE と RIR はセットごとに変わる値なので写さない。
@@ -211,13 +229,15 @@ final class RecordModel {
         guard let database, let weight = row.weightValue, let reps = row.repsValue, let exerciseId = exercise?.id else { return }
         let record = record, memo = memo, performedAt = performedAt
         let rpe = row.rpeValue, rir = row.rirValue
+        // 入力時刻を持たない前からのセットは、値を直しても空のままにする。直した時刻は入れた時刻ではないため
+        let createdAt = row.saved == nil ? Clock.now() : row.saved?.createdAt
         do {
             let (savedRecord, savedSet) = try database.writer.write { db in
                 var record = record ?? WorkoutRecord(exerciseId: exerciseId, performedAt: performedAt, memo: memo)
                 if record.id == nil {
                     try record.insert(db)
                 }
-                var set = WorkoutSet(id: row.saved?.id, recordId: record.id!, position: i, weight: weight, reps: reps, rpe: rpe, rir: rir)
+                var set = WorkoutSet(id: row.saved?.id, recordId: record.id!, position: i, weight: weight, reps: reps, rpe: rpe, rir: rir, createdAt: createdAt)
                 try set.save(db)
                 return (record, set)
             }

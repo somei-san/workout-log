@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.intensity) private var intensity = IntensityKind.initial
     @AppStorage(SettingsKey.historyColumns) private var columnsRaw = HistoryColumn.initialRaw
     @AppStorage(SettingsKey.appearance) private var appearance = Appearance.initial
+    @AppStorage(SettingsKey.showsElapsed) private var showsElapsed = ShowsElapsed.initial
     @State private var document: CSVDocument?
     @State private var isExporting = false
 
@@ -40,6 +41,7 @@ struct SettingsView: View {
                         Text(kind.label).tag(kind)
                     }
                 }
+                Toggle("最後のセットからの経過時間", isOn: $showsElapsed)
             }
             Section {
                 ForEach(HistoryColumn.allCases, id: \.self) { column in

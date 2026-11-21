@@ -66,6 +66,7 @@ struct RecordView: View {
     @Environment(\.appDatabase) private var database
     @Environment(\.dismiss) private var dismiss
     @AppStorage(SettingsKey.intensity) private var intensity = IntensityKind.initial
+    @AppStorage(SettingsKey.showsElapsed) private var showsElapsed = ShowsElapsed.initial
     @State private var model = RecordModel()
     @State private var isChoosingDate = false
     @State private var isConfirmingRecordDelete = false
@@ -396,7 +397,13 @@ struct RecordView: View {
     /// 複製のボタンは最初のセットができると現れるので、両方をまとめて真ん中に寄せると、そのときに「＋」がずれる
     private var addButtons: some View {
         HStack(spacing: 0) {
-            Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+            HStack(spacing: 0) {
+                if showsElapsed {
+                    elapsed
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity)
             // List の中のボタンは、buttonStyle を指定しないと行の全体が押せる範囲になり、右の空いたところを押しても足される
             Button(action: addRow) { addButtonLabel("plus") }
                 .buttonStyle(.plain)
@@ -413,6 +420,24 @@ struct RecordView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(.vertical, 8)
+    }
+
+    /// いちばん下のセットからの経過時間。入れ忘れたセットに、画面を開き直したときに気づけるようにする
+    @ViewBuilder private var elapsed: some View {
+        // 入力時刻から 1 秒ごとに描き直す。開いた時刻から数えると、表示の秒が最大 1 秒遅れるため
+        if let start = model.elapsedStart(now: Clock.now()) {
+            TimelineView(.periodic(from: start, by: 1)) { _ in
+                // TimelineView が渡す日時ではなく Clock から取る。UI テストで時刻を固定したときに、撮る画像の経過時間が毎回同じになるように
+                let now = Clock.now()
+                if model.elapsedStart(now: now) != nil {
+                    let seconds = max(0, Int(now.timeIntervalSince(start)))
+                    Label(Format.elapsed(seconds), systemImage: "clock")
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("最後のセットから \(seconds / 60) 分 \(seconds % 60) 秒")
+                }
+            }
+        }
     }
 
     private func addButtonLabel(_ systemImage: String) -> some View {

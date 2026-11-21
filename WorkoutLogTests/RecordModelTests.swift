@@ -229,6 +229,89 @@ struct RecordModelTests {
         #expect(try savedSets().map(\.position) == [0, 1])
     }
 
+    @Test func セットになった時刻を入力時刻として保存し_値を直しても変えない() async throws {
+        let exercise = try insertExercise(initialRowCount: 1)
+        let model = RecordModel()
+        try await model.load(.new(exerciseId: exercise.id!), database: database)
+        let row = model.rows[0].id
+        model.setValue(row, \.weight, "60")
+        model.setValue(row, \.reps, "10")
+        let createdAt = try #require(try savedSets().first?.createdAt)
+        #expect(abs(createdAt.timeIntervalSinceNow) < 5)
+
+        try await Task.sleep(for: .milliseconds(50))
+        model.setValue(row, \.reps, "9")
+        #expect(try savedSets().first?.createdAt == createdAt)
+    }
+
+    @Test func 経過時間は_いちばん下のセットの入力時刻から_1時間未満の間だけ測る() async throws {
+        let exercise = try insertExercise()
+        let model = RecordModel()
+        try await model.load(.new(exerciseId: exercise.id!), database: database)
+        #expect(model.elapsedStart(now: Clock.now()) == nil)
+
+        let row = model.addRow()
+        model.setValue(row, \.weight, "60")
+        model.setValue(row, \.reps, "10")
+        let start = try #require(model.lastSet?.createdAt)
+        #expect(model.elapsedStart(now: start.addingTimeInterval(59 * 60)) == start)
+        #expect(model.elapsedStart(now: start.addingTimeInterval(60 * 60)) == nil)
+    }
+
+    @Test func 開いている間に日付が変わっても_経過時間は1時間未満なら測り続ける() async throws {
+        let exercise = try insertExercise()
+        // 23:55 に入れたセットを、日付が変わった 0:05 に見る。データベースの日時の丸めに合わせて秒で揃える
+        let midnight = Calendar.current.startOfDay(for: Clock.now())
+        let lastSetAt = midnight.addingTimeInterval(-5 * 60)
+        let record = try insertRecord(exercise, at: lastSetAt, sets: [])
+        try await database.writer.write { db in
+            var set = WorkoutSet(recordId: record.id!, position: 0, weight: 60, reps: 10, createdAt: lastSetAt)
+            try set.insert(db)
+        }
+        let model = RecordModel()
+        try await model.load(.existing(recordId: record.id!), database: database,
+                             today: LocalDay(lastSetAt, timeZone: .current))
+
+        #expect(model.elapsedStart(now: midnight.addingTimeInterval(5 * 60)) == lastSetAt)
+    }
+
+    @Test func 経過時間は_種目でオフにしたときと_前日以前の記録と_入力時刻の無いセットでは測らない() async throws {
+        var exercise = try insertExercise()
+        // データベースに入れた日時はミリ秒までに丸まるので、読み直した値と比べられるよう秒で揃える
+        let now = Date(timeIntervalSince1970: Clock.now().timeIntervalSince1970.rounded(.down))
+        let set = { (record: WorkoutRecord) in
+            try self.database.writer.write { db in
+                var set = WorkoutSet(recordId: record.id!, position: 0, weight: 60, reps: 10, createdAt: now)
+                try set.insert(db)
+            }
+        }
+
+        let past = try insertRecord(exercise, at: daysAgo(2), sets: [])
+        try set(past)
+        let pastModel = RecordModel()
+        try await pastModel.load(.existing(recordId: past.id!), database: database)
+        #expect(pastModel.elapsedStart(now: now) == nil)
+
+        // insertRecord のセットは入力時刻を持たない
+        let old = try insertRecord(exercise, at: now, sets: [(60, 10)])
+        let oldModel = RecordModel()
+        try await oldModel.load(.existing(recordId: old.id!), database: database)
+        #expect(oldModel.elapsedStart(now: now) == nil)
+
+        let today = try insertRecord(exercise, at: now, sets: [])
+        try set(today)
+        let onModel = RecordModel()
+        try await onModel.load(.existing(recordId: today.id!), database: database)
+        #expect(onModel.elapsedStart(now: now) == now)
+
+        exercise.showsElapsed = false
+        let hidden = exercise
+        try await database.writer.write { db in try hidden.update(db) }
+        let offModel = RecordModel()
+        try await offModel.load(.existing(recordId: today.id!), database: database)
+        #expect(offModel.elapsedStart(now: now) == nil)
+    }
+
     @Test func 空の欄の増減は上の行の値から_上の行も空なら0から() async throws {
         let exercise = try insertExercise(initialRowCount: 3)
         let model = RecordModel()

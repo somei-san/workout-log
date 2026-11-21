@@ -6,6 +6,12 @@ enum SettingsKey {
     static let historyColumns = "history.columns"
     static let appearance = "appearance"
     static let partOrder = "partOrder"
+    static let showsElapsed = "showsElapsed"
+}
+
+/// 記録の画面に最後のセットからの経過時間を出すかの初期値
+enum ShowsElapsed {
+    static let initial = true
 }
 
 /// 部位の並び。ホームの部位の見方の区切りと、種目の追加・設定の部位のボタンが、この順を使う

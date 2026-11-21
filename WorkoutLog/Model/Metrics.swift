@@ -21,6 +21,12 @@ struct RecordSummary: Identifiable, Sendable {
 }
 
 enum Format {
+    /// 経過時間を「分:秒」で（7:05）。時は付けないので、1 時間以上は「75:00」のように分で数える。負の値は 0 にする
+    static func elapsed(_ seconds: Int) -> String {
+        let seconds = max(0, seconds)
+        return String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
+
     /// 重さ。整数なら小数点を付けない(135、132.5)
     static func weight(_ value: Double) -> String {
         String(format: "%g", value)

@@ -25,6 +25,8 @@ struct Exercise: Codable, Identifiable, Sendable, FetchableRecord, MutablePersis
     var isHidden = false
     /// 最初に並べるセット数(0〜10)
     var initialRowCount = 0
+    /// 種目の記録で、最後のセットからの経過時間を出すか。設定の「最後のセットからの経過時間」と両方がオンのときだけ出す
+    var showsElapsed = true
 
     mutating func didInsert(_ inserted: InsertionSuccess) {
         id = inserted.rowID

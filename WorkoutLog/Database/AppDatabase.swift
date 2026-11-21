@@ -14,7 +14,7 @@ struct AppDatabase: Sendable {
 
     // 実機に入るのは DEBUG ビルドで、実際の記録が入っている。記録を消さないため、
     // eraseDatabaseOnSchemaChange は使わない。実機で動かしたマイグレーションは書き換えず、新しく足す
-    private static var migrator: DatabaseMigrator {
+    static var migrator: DatabaseMigrator {
         var migrator = DatabaseMigrator()
         migrator.registerMigration("v1") { db in
             try db.create(table: "exercise") { t in
@@ -42,6 +42,15 @@ struct AppDatabase: Sendable {
                 t.column("reps", .integer).notNull()
                 t.column("rpe", .double)
                 t.column("rir", .integer)
+            }
+        }
+        migrator.registerMigration("v2") { db in
+            // 前からあるセットは、いつ入れたか分からないので空のまま残す
+            try db.alter(table: "workoutSet") { t in
+                t.add(column: "createdAt", .datetime)
+            }
+            try db.alter(table: "exercise") { t in
+                t.add(column: "showsElapsed", .boolean).notNull().defaults(to: true)
             }
         }
         return migrator

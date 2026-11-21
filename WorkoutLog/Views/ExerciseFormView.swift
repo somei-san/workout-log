@@ -60,6 +60,11 @@ struct ExerciseFormView: View {
                 Section("最初に並べるセット数") {
                     Stepper("空の行の数  \(exercise.initialRowCount)", value: $exercise.initialRowCount, in: 0...10)
                 }
+                Section {
+                    Toggle("最後のセットからの経過時間", isOn: $exercise.showsElapsed)
+                } footer: {
+                    Text("アプリの設定でもオンのときだけ出す")
+                }
             }
             .navigationTitle(isNew ? "種目を追加" : "種目の設定")
             .navigationBarTitleDisplayMode(.inline)

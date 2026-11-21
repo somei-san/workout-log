@@ -52,6 +52,27 @@ final class RecordTests: XCTestCase {
         XCTAssertFalse(app.keyboards.firstMatch.exists, "写したセットなのにキーボードが出ている")
     }
 
+    func test最後のセットからの経過時間を出し_種目の設定でオフにすると出さない() throws {
+        try recordOneSet()
+        // UI テストは時刻を固定しているので、経過時間は 0 秒のまま
+        let elapsed = app.staticTexts["最後のセットから 0 分 0 秒"]
+        XCTAssertTrue(elapsed.waitToAppear(timeout: 5), "セットを作っても経過時間が出ない")
+
+        app.buttons["BackButton"].firstMatch.tap()
+        app.buttons["種目の設定"].tap()
+        let toggle = app.switches["最後のセットからの経過時間"]
+        XCTAssertTrue(toggle.waitToAppear(timeout: 5))
+        // Form の中のスイッチは、行の真ん中を押しても切り替わらないので、右の端のつまみを押す
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        app.buttons["保存"].tap()
+
+        let summary = app.staticTexts["160 / 24.8 / 20.0"]
+        XCTAssertTrue(summary.waitToAppear(timeout: 5))
+        summary.tap()
+        XCTAssertTrue(app.buttons["同じセットを追加"].waitToAppear(timeout: 5))
+        XCTAssertFalse(elapsed.exists, "種目の設定でオフにしても経過時間が出る")
+    }
+
     func test前日以前の記録は閲覧モードで開き_編集と完了で切り替わる() throws {
         try recordOneSet(languageIsEnglish: true)
         let dateButton = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "▾")).firstMatch
