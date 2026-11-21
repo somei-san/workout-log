@@ -195,10 +195,10 @@ class SnapshotTests: XCTestCase {
         app.addExercise("ベンチプレス", part: "胸")
         app.card("ベンチプレス").tap()
         app.buttons["新しい記録"].tap()
-        XCTAssertTrue(app.buttons["＋ セットを追加"].waitToAppear(timeout: 5))
+        XCTAssertTrue(app.buttons["セットを追加"].waitToAppear(timeout: 5))
         snapshot("1-new")
 
-        app.buttons["＋ セットを追加"].tap()
+        app.buttons["セットを追加"].tap()
         let fields = app.textFields.matching(identifier: "重さと回数")
         XCTAssertTrue(fields.element(boundBy: 1).waitToAppear(timeout: 5))
         let weight = fields.element(boundBy: 0), reps = fields.element(boundBy: 1)
@@ -225,7 +225,8 @@ class SnapshotTests: XCTestCase {
         try app.closeKeyboard()
         snapshot("6-one-set")
 
-        try app.addSet(weight: "102.5", reps: "5")
+        app.buttons["同じセットを追加"].tap()
+        guard fields.element(boundBy: 3).waitToAppear(timeout: 5) else { return XCTFail("「同じセットを追加」でセットが足されない") }
         snapshot("7-two-sets")
     }
 
@@ -287,7 +288,7 @@ class SnapshotTests: XCTestCase {
         launch(exercises: [("ベンチプレス", "chest")])
         app.card("ベンチプレス").tap()
         app.buttons["新しい記録"].tap()
-        XCTAssertTrue(app.buttons["＋ セットを追加"].waitToAppear(timeout: 5))
+        XCTAssertTrue(app.buttons["セットを追加"].waitToAppear(timeout: 5))
         try app.addSet(weight: "100", reps: "5")
         try app.addSet(weight: "100", reps: "4")
 
@@ -312,7 +313,7 @@ class SnapshotTests: XCTestCase {
         snapshot("1-view-mode")
 
         app.buttons["編集"].tap()
-        guard app.buttons["＋ セットを追加"].waitToAppear(timeout: 5) else { return XCTFail("編集モードに切り替わらない") }
+        guard app.buttons["セットを追加"].waitToAppear(timeout: 5) else { return XCTFail("編集モードに切り替わらない") }
         snapshot("2-edit-mode")
 
         app.buttons["完了"].tap()

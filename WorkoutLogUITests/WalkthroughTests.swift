@@ -61,7 +61,7 @@ final class WalkthroughTests: XCTestCase {
         tap(button("新しい記録"), "新しい記録")
         shot("05-記録-新規")
 
-        tap(button("＋ セットを追加"), "セットを追加")
+        tap(button("セットを追加"), "セットを追加")
         let fields = app.textFields.matching(identifier: "重さと回数")
         if fields.count >= 2 {
             // 数字以外の文字も打つ。「1a00」を 1 回の typeText で打つと欄に「1」だけが残ったので、分けて打つ
@@ -83,7 +83,7 @@ final class WalkthroughTests: XCTestCase {
         fields.element(boundBy: 0).tap()
         tap(button("＋2.5"), "＋2.5")
         shot("08-記録-＋2.5")
-        tap(button("＋ セットを追加"), "セットを追加 2 回目")
+        tap(button("セットを追加"), "セットを追加 2 回目")
         if fields.count >= 4 {
             // 2 行目の重さは「前回 102.5」で 1 行目から写し、そのまま回数の欄へ移る
             XCTAssertTrue(button("前回 102.5").exists, "写すボタンに 1 行目の重さが出ない")
@@ -109,8 +109,8 @@ final class WalkthroughTests: XCTestCase {
             tap(button("閉じる"), "閉じる 最後の欄")
             XCTAssertTrue(app.keyboards.firstMatch.waitToDisappear(timeout: 3), "「閉じる」でキーボードが閉じない")
             XCTAssertEqual(fields.count, 4, "「閉じる」で行が増えた")
-            tap(button("＋ セットを追加"), "セットを追加 3 回目")
-            XCTAssertTrue(fields.element(boundBy: 4).waitToAppear(timeout: 3), "「＋ セットを追加」で行が増えない")
+            tap(button("セットを追加"), "セットを追加 3 回目")
+            XCTAssertTrue(fields.element(boundBy: 4).waitToAppear(timeout: 3), "「＋」で行が増えない")
             fields.element(boundBy: 4).typeText("60")
             XCTAssertEqual(fields.element(boundBy: 4).value as? String, "60", "足した行の重さの欄へ移らない")
             // 打っている欄は、キーボードの上のボタンの並びより上に出る

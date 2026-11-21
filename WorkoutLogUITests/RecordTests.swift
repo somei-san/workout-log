@@ -14,7 +14,7 @@ final class RecordTests: XCTestCase {
         app.launchEmpty(languageIsEnglish: languageIsEnglish, exercises: [("懸垂", "back")])
         app.card("懸垂").tap()
         app.buttons["新しい記録"].tap()
-        XCTAssertTrue(app.buttons["＋ セットを追加"].waitToAppear(timeout: 5))
+        XCTAssertTrue(app.buttons["セットを追加"].waitToAppear(timeout: 5))
         try app.addSet(weight: "20", reps: "8")
     }
 
@@ -32,14 +32,24 @@ final class RecordTests: XCTestCase {
         try recordOneSet()
         let fields = app.textFields.matching(identifier: "重さと回数")
         let count = fields.count
-        let add = app.buttons["＋ セットを追加"]
+        let add = app.buttons["セットを追加"]
         app.coordinate(withNormalizedOffset: .zero)
             .withOffset(CGVector(dx: app.frame.maxX - 24, dy: add.frame.midY))
             .tap()
         XCTAssertFalse(fields.element(boundBy: count).waitForExistence(timeout: 2), "行の右の空いたところでセットが足された")
 
         add.tap()
-        XCTAssertTrue(fields.element(boundBy: count + 1).waitToAppear(timeout: 5), "「＋ セットを追加」を押してもセットが足されない")
+        XCTAssertTrue(fields.element(boundBy: count + 1).waitToAppear(timeout: 5), "「＋」を押してもセットが足されない")
+    }
+
+    func test同じセットを追加すると_いちばん下のセットの重さと回数でセットが増える() throws {
+        try recordOneSet()
+        let fields = app.textFields.matching(identifier: "重さと回数")
+        app.buttons["同じセットを追加"].tap()
+        XCTAssertTrue(fields.element(boundBy: 3).waitToAppear(timeout: 5), "「同じセットを追加」を押してもセットが足されない")
+        XCTAssertEqual(fields.element(boundBy: 2).value as? String, "20")
+        XCTAssertEqual(fields.element(boundBy: 3).value as? String, "8")
+        XCTAssertFalse(app.keyboards.firstMatch.exists, "写したセットなのにキーボードが出ている")
     }
 
     func test前日以前の記録は閲覧モードで開き_編集と完了で切り替わる() throws {
@@ -62,20 +72,20 @@ final class RecordTests: XCTestCase {
         XCTAssertTrue(edit.waitToAppear(timeout: 5), "前日以前の記録が閲覧モードで開かない")
         XCTAssertEqual(app.textFields.matching(identifier: "重さと回数").count, 0)
         XCTAssertTrue(app.staticTexts["20"].exists)
-        XCTAssertFalse(app.buttons["＋ セットを追加"].exists)
+        XCTAssertFalse(app.buttons["セットを追加"].exists)
         XCTAssertFalse(dateButton.exists)
         app.staticTexts["20"].swipeLeft()
         XCTAssertFalse(app.buttons["削除"].waitForExistence(timeout: 2), "閲覧モードで行を消せる")
 
         edit.tap()
-        XCTAssertTrue(app.buttons["＋ セットを追加"].waitToAppear(timeout: 5))
+        XCTAssertTrue(app.buttons["セットを追加"].waitToAppear(timeout: 5))
         XCTAssertEqual(app.textFields.matching(identifier: "重さと回数").count, 2)
         XCTAssertTrue(dateButton.exists)
 
         app.buttons["完了"].tap()
         XCTAssertTrue(edit.waitToAppear(timeout: 5))
-        // 「編集」が出るのと、「＋ セットを追加」が消えるのが同時とは限らないので、消えるまで待つ
-        XCTAssertTrue(app.buttons["＋ セットを追加"].waitToDisappear(timeout: 5))
+        // 「編集」が出るのと、「＋」が消えるのが同時とは限らないので、消えるまで待つ
+        XCTAssertTrue(app.buttons["セットを追加"].waitToDisappear(timeout: 5))
 
         // 2 回目に開いた「新しい記録」は、1 回目の記録を「前回」として出す
         app.buttons["BackButton"].firstMatch.tap()

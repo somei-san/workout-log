@@ -112,6 +112,31 @@ final class RecordModel {
         return row.id
     }
 
+    /// いちばん下のセット（重さと回数を保存した行）。同じセットを足すときに写す元
+    var lastSet: WorkoutSet? {
+        rows.last { $0.saved != nil }?.saved
+    }
+
+    /// いちばん下のセットの重さと回数を写したセットを足す。写すセットが無ければ false を返す。
+    /// RPE と RIR はセットごとに変わる値なので写さない。
+    /// いちばん下のセットより後に、重さも回数も空の行があれば、新しく足さずにその行に入れる。
+    /// 最初に並べた空の行が、足したセットの上に残らないようにするため
+    @discardableResult
+    func duplicateLastSet() -> Bool {
+        guard let source = rows.lastIndex(where: { $0.saved != nil }), let set = rows[source].saved else { return false }
+        let i: Int
+        if let empty = rows[(source + 1)...].firstIndex(where: { $0.weight.isEmpty && $0.reps.isEmpty }) {
+            i = empty
+        } else {
+            rows.append(SetRow())
+            i = rows.count - 1
+        }
+        rows[i].weight = Format.weight(set.weight)
+        rows[i].reps = String(set.reps)
+        persist(i)
+        return true
+    }
+
     func index(of rowId: UUID) -> Int? {
         rows.firstIndex { $0.id == rowId }
     }

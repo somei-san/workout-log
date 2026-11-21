@@ -69,7 +69,7 @@ private struct KeyboardDismissal: UIViewRepresentable {
         }
 
         @objc private func tapped() {
-            // 欄のまわりの押せる範囲や「＋ セットを追加」を押すと、同じタップで別の欄へ移る。
+            // 欄のまわりの押せる範囲やセットを足す「＋」を押すと、同じタップで別の欄へ移る。
             // 移ったかどうかはタップの処理が終わるまで分からないので、次の周回で、入力中の欄が変わっていないときだけ閉じる
             let responder = responderAtTouch
             DispatchQueue.main.async { [weak self] in
