@@ -126,15 +126,8 @@ struct RecordView: View {
                     }
                 }
                 if model.isEditing {
-                    // List の中のボタンは、buttonStyle を指定しないと行の全体が押せる範囲になり、右の空いたところを押しても足される。
-                    // borderless は文字がアクセントの色になるので、plain にする
-                    Button(action: addRow) {
-                        Text("＋ セットを追加")
-                            .frame(minHeight: 44)
-                            .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
-                    .listRowSeparator(.hidden)
+                    addButtons
+                        .listRowSeparator(.hidden)
                 }
             }
             Section("メモ") {
@@ -399,6 +392,37 @@ struct RecordView: View {
         Text("×").font(.footnote).foregroundStyle(.tertiary).padding(.horizontal, 4)
     }
 
+    /// 空の行を足す「＋」を画面の横の真ん中に固定し、その右に、いちばん下のセットを写して足す複製のボタンを置く。
+    /// 複製のボタンは最初のセットができると現れるので、両方をまとめて真ん中に寄せると、そのときに「＋」がずれる
+    private var addButtons: some View {
+        HStack(spacing: 0) {
+            Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+            // List の中のボタンは、buttonStyle を指定しないと行の全体が押せる範囲になり、右の空いたところを押しても足される
+            Button(action: addRow) { addButtonLabel("plus") }
+                .buttonStyle(.plain)
+                .accessibilityLabel("セットを追加")
+            HStack(spacing: 0) {
+                if model.lastSet != nil {
+                    Button(action: duplicateLastSet) { addButtonLabel("plus.square.on.square") }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("同じセットを追加")
+                        .padding(.leading, 28)
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func addButtonLabel(_ systemImage: String) -> some View {
+        Image(systemName: systemImage)
+            .font(.title2)
+            .foregroundStyle(.primary)
+            .frame(width: 52, height: 52)
+            .background(.fill.tertiary, in: .rect(cornerRadius: 14))
+    }
+
     private var dateText: String {
         Format.date(model.performedAt, timeZone: model.record?.timeZone ?? .current, weekday: true, time: model.sharesDay)
     }
@@ -421,6 +445,12 @@ struct RecordView: View {
 
     private func addRow() {
         focus = .weight(model.addRow())
+    }
+
+    /// 写したセットは打つものが無いので、キーボードを閉じる
+    private func duplicateLastSet() {
+        focus = nil
+        model.duplicateLastSet()
     }
 
     private func adjustWeight(_ delta: Double) {

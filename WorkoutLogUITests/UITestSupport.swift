@@ -66,11 +66,11 @@ extension XCUIApplication {
         XCTAssertTrue(add.waitToDisappear(timeout: 5), "「追加」で種目の追加のシートが閉じない")
     }
 
-    /// 種目の記録で「＋ セットを追加」で行を足し、その行に重さと回数を入れる
+    /// 種目の記録で「＋」で行を足し、その行に重さと回数を入れる
     func addSet(weight: String, reps: String) throws {
         let fields = textFields.matching(identifier: "重さと回数")
         let count = fields.count
-        buttons["＋ セットを追加"].tap()
+        buttons["セットを追加"].tap()
         XCTAssertTrue(fields.element(boundBy: count + 1).waitToAppear(timeout: 5))
         type(weight, into: fields.element(boundBy: count))
         type(reps, into: fields.element(boundBy: count + 1))

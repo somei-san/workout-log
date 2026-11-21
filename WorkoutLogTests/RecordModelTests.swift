@@ -197,6 +197,38 @@ struct RecordModelTests {
         #expect(try savedSets().count == 2)
     }
 
+    @Test func 同じセットを足すと_いちばん下のセットの重さと回数だけを写して保存する() async throws {
+        let exercise = try insertExercise()
+        let model = RecordModel()
+        try await model.load(.new(exerciseId: exercise.id!), database: database)
+        #expect(model.lastSet == nil)
+        #expect(!model.duplicateLastSet())
+
+        let row = model.addRow()
+        model.setValue(row, \.weight, "102.5")
+        model.setValue(row, \.reps, "5")
+        model.setValue(row, \.rpe, "8")
+        #expect(model.duplicateLastSet())
+        #expect(model.rows.count == 2)
+        let sets = try savedSets()
+        #expect(sets.map { "\($0.position):\($0.weight)×\($0.reps)" } == ["0:102.5×5", "1:102.5×5"])
+        #expect(sets.map(\.rpe) == [8, nil])
+    }
+
+    @Test func 同じセットは_いちばん下のセットより後の空の行に入れる() async throws {
+        let exercise = try insertExercise(initialRowCount: 3)
+        let model = RecordModel()
+        try await model.load(.new(exerciseId: exercise.id!), database: database)
+        model.setValue(model.rows[0].id, \.weight, "60")
+        model.setValue(model.rows[0].id, \.reps, "10")
+
+        #expect(model.duplicateLastSet())
+        #expect(model.rows.count == 3)
+        #expect(model.value(model.rows[1].id, \.weight) == "60")
+        #expect(model.value(model.rows[2].id, \.weight) == "")
+        #expect(try savedSets().map(\.position) == [0, 1])
+    }
+
     @Test func 空の欄の増減は上の行の値から_上の行も空なら0から() async throws {
         let exercise = try insertExercise(initialRowCount: 3)
         let model = RecordModel()
