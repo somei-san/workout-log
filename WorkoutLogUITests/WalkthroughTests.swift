@@ -65,11 +65,11 @@ final class WalkthroughTests: XCTestCase {
         let fields = app.textFields.matching(identifier: "重さと回数")
         if fields.count >= 2 {
             // 数字以外の文字も打つ。「1a00」を 1 回の typeText で打つと欄に「1」だけが残ったので、分けて打つ
-            for text in ["1", "a", "00"] {
+            for text in ["1", "a", "02.5"] {
                 fields.element(boundBy: 0).typeText(text)
             }
             shot("06-記録-重さ入力中")
-            XCTAssertEqual(fields.element(boundBy: 0).value as? String, "100", "重さの欄に数字以外の文字が残っている")
+            XCTAssertEqual(fields.element(boundBy: 0).value as? String, "102.5", "重さの欄に数字以外の文字が残っている")
             // 「次へ」で重さから回数の欄へ移る
             tap(button("次へ"), "次へ 重さから回数")
             fields.element(boundBy: 1).typeText("5x")
@@ -78,26 +78,23 @@ final class WalkthroughTests: XCTestCase {
         } else {
             XCTFail("重さと回数の欄が無い")
         }
-        // 回数の欄では、重さのボタンを出さない
-        XCTAssertFalse(button("＋2.5").exists, "回数の欄で重さのボタンが出ている")
-        fields.element(boundBy: 0).tap()
-        tap(button("＋2.5"), "＋2.5")
-        shot("08-記録-＋2.5")
         tap(button("セットを追加"), "セットを追加 2 回目")
         if fields.count >= 4 {
-            // 2 行目の重さは「前回 102.5」で 1 行目から写し、そのまま回数の欄へ移る
-            XCTAssertTrue(button("前回 102.5").exists, "写すボタンに 1 行目の重さが出ない")
-            shot("08b-記録-前回の値")
-            tap(button("前回 102.5"), "前回の値")
+            // 2 行目の重さは、写すボタンで 1 行目から写し、そのまま回数の欄へ移る
+            let copy = button("前回と同じ")
+            XCTAssertTrue(copy.waitToAppear(timeout: 5), "写すボタンが出ない")
+            XCTAssertTrue(copy.label.contains("102.5"), "写すボタンに 1 行目の重さが出ない: \(copy.label)")
+            shot("08-記録-前回の値")
+            tap(copy, "前回の値")
             XCTAssertEqual(fields.element(boundBy: 2).value as? String, "102.5", "上の行の重さが写らない")
             fields.element(boundBy: 3).typeText("5")
-            XCTAssertEqual(fields.element(boundBy: 3).value as? String, "5", "「前回 102.5」で回数の欄へ移らない")
+            XCTAssertEqual(fields.element(boundBy: 3).value as? String, "5", "写すボタンで回数の欄へ移らない")
             // 回数の次は RPE の欄
             tap(button("次へ"), "次へ 回数から RPE")
             let intensityFields = app.textFields.matching(identifier: "強度")
             intensityFields.element(boundBy: 1).typeText("8")
             XCTAssertEqual(intensityFields.element(boundBy: 1).value as? String, "8", "「次へ」で RPE の欄へ移らない")
-            XCTAssertFalse(button("前回").exists, "RPE の欄で、上の行の値を写すボタンが出ている")
+            XCTAssertFalse(button("前回と同じ").exists, "RPE の欄で、上の行の値を写すボタンが出ている")
             // 打っている欄の上の余白を押しても、キーボードは閉じない
             intensityFields.element(boundBy: 1).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
                 .withOffset(CGVector(dx: 0, dy: -6)).tap()
@@ -113,7 +110,7 @@ final class WalkthroughTests: XCTestCase {
             XCTAssertTrue(fields.element(boundBy: 4).waitToAppear(timeout: 3), "「＋」で行が増えない")
             fields.element(boundBy: 4).typeText("60")
             XCTAssertEqual(fields.element(boundBy: 4).value as? String, "60", "足した行の重さの欄へ移らない")
-            // 打っている欄は、キーボードの上のボタンの並びより上に出る
+            // 打っている欄は、キーボードのツールバーより上に出る
             XCTAssertLessThan(fields.element(boundBy: 4).frame.maxY, button("次へ").frame.minY, "打っている欄がボタンに隠れる")
             shot("09b-記録-足した行")
             // メモを打つときも、欄がキーボードに隠れない。

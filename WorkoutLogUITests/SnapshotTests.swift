@@ -207,27 +207,29 @@ class SnapshotTests: XCTestCase {
         snapshot("2-keypad")
 
         // 数字以外の文字も打つ
-        guard typeEach(["1", "a", "00"], into: weight) else { return XCTFail("キーパッドが出ない") }
-        guard weight.value as? String == "100" else { return XCTFail("重さの欄が 100 にならない: \(String(describing: weight.value))") }
+        guard typeEach(["1", "a", "02.5"], into: weight) else { return XCTFail("キーパッドが出ない") }
+        guard weight.value as? String == "102.5" else { return XCTFail("重さの欄が 102.5 にならない: \(String(describing: weight.value))") }
         snapshot("3-typing-weight")
 
         guard typeEach(["5", "x"], into: reps) else { return XCTFail("キーパッドが出ない") }
         guard reps.value as? String == "5" else { return XCTFail("回数の欄が 5 にならない: \(String(describing: reps.value))") }
         snapshot("4-typing-reps")
 
-        // 「＋2.5」は重さの欄を打っているときだけ出る
-        tapEnd(of: weight)
-        guard button("＋2.5").waitToAppear(timeout: 5) else { return XCTFail("重さの欄で「＋2.5」が出ない") }
-        button("＋2.5").tap()
-        guard weight.value as? String == "102.5" else { return XCTFail("＋2.5 で重さが 102.5 にならない") }
-        snapshot("5-plus-2.5")
-
         try app.closeKeyboard()
         snapshot("6-one-set")
 
+        // 2 行目の重さの欄では、写すボタンに 1 行目の重さが出る
+        app.buttons["セットを追加"].tap()
+        let copy = button("前回と同じ")
+        guard copy.waitToAppear(timeout: 10), copy.label.contains("102.5") else { return XCTFail("2 行目で写すボタンに「102.5」が出ない") }
+        snapshot("7-copy-above")
+
+        try app.closeKeyboard()
         app.buttons["同じセットを追加"].tap()
-        guard fields.element(boundBy: 3).waitToAppear(timeout: 5) else { return XCTFail("「同じセットを追加」でセットが足されない") }
-        snapshot("7-two-sets")
+        // 「セットを追加」で 2 行目の空の行はもうあるので、行の数ではなく、2 行目に 1 行目の値が入ったかで確かめる
+        let copied = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "102.5"), object: fields.element(boundBy: 2))
+        guard XCTWaiter().wait(for: [copied], timeout: 5) == .completed else { return XCTFail("「同じセットを追加」で 2 行目に 1 行目の値が入らない") }
+        snapshot("8-two-sets")
     }
 
     /// 種目の履歴・記録の日付のシート・分析の画面を、1 回の起動で続けて撮る。

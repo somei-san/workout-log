@@ -6,18 +6,6 @@ extension View {
     func dismissesKeyboardOnTapOutside() -> some View {
         background(KeyboardDismissal())
     }
-
-    /// 押しても、キーボードを閉じない範囲にする。キーボードの上に出すボタンの並びに付ける
-    func keepsKeyboardOnTap() -> some View {
-        background(KeyboardKeepingArea())
-    }
-}
-
-private struct KeyboardKeepingArea: UIViewRepresentable {
-    func makeUIView(context: Context) -> KeepingView { KeepingView() }
-    func updateUIView(_ uiView: KeepingView, context: Context) {}
-
-    final class KeepingView: UIView {}
 }
 
 /// 画面の window にタップの認識を足す。SwiftUI のタップでは、ボタンや欄の上を押したときに受け取れないため
@@ -51,8 +39,6 @@ private struct KeyboardDismissal: UIViewRepresentable {
             responderAtTouch = window.flatMap(Self.firstResponder)
             guard let window, let responder = responderAtTouch else { return false }
             let location = touch.location(in: window)
-            // キーボードの上のボタンの並びは window の中にあるので、押しても閉じないよう外す
-            if Self.keepingAreas(in: window).contains(where: { $0.contains(location) }) { return false }
             // 打っている欄の上下の、押せる範囲を高さ 44pt に広げた余白を押したときも、閉じずにその欄に残る。
             // 余白は欄の外の SwiftUI のビューなので、上の判定では欄の中と分からない
             let frame = responder.convert(responder.bounds, to: window)
@@ -76,18 +62,6 @@ private struct KeyboardDismissal: UIViewRepresentable {
                 guard let window = self?.window, let responder, Self.firstResponder(in: window) === responder else { return }
                 window.endEditing(true)
             }
-        }
-
-        private static func keepingAreas(in window: UIWindow) -> [CGRect] {
-            var areas: [CGRect] = []
-            func collect(_ view: UIView) {
-                if view is KeyboardKeepingArea.KeepingView {
-                    areas.append(view.convert(view.bounds, to: window))
-                }
-                view.subviews.forEach(collect)
-            }
-            collect(window)
-            return areas
         }
 
         private static func firstResponder(in view: UIView) -> UIView? {
