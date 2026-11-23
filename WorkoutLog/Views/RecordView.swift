@@ -193,6 +193,7 @@ struct RecordView: View {
                         Image(systemName: isLastFieldOfRow ? "checkmark" : "arrow.right")
                             .accessibilityLabel(isLastFieldOfRow ? "閉じる" : "次へ")
                     }
+                    // `.tint(.accentColor)` は、画面全体ではなくツールバーのボタンそれぞれに付ける。画面全体に付けると、過去の記録の「編集」のボタンまで `.accentColor` になるため
                     .tint(.accentColor)
                 }
             }
