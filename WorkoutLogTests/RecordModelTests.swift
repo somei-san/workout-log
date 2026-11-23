@@ -311,27 +311,4 @@ struct RecordModelTests {
         try await offModel.load(.existing(recordId: today.id!), database: database)
         #expect(offModel.elapsedStart(now: now) == nil)
     }
-
-    @Test func 空の欄の増減は上の行の値から_上の行も空なら0から() async throws {
-        let exercise = try insertExercise(initialRowCount: 3)
-        let model = RecordModel()
-        try await model.load(.new(exerciseId: exercise.id!), database: database)
-        let (first, second, third) = (model.rows[0].id, model.rows[1].id, model.rows[2].id)
-
-        model.adjustWeight(first, by: 2.5)
-        model.adjustReps(first, by: -1)
-        #expect(model.value(first, \.weight) == "2.5")
-        #expect(model.value(first, \.reps) == "1")
-
-        model.setValue(second, \.weight, "60")
-        model.setValue(second, \.reps, "10")
-        model.adjustWeight(third, by: -2.5)
-        model.adjustReps(third, by: 1)
-        #expect(model.value(third, \.weight) == "57.5")
-        #expect(model.value(third, \.reps) == "11")
-
-        // 値の入った欄は、その値から増減する
-        model.adjustWeight(third, by: 2.5)
-        #expect(model.value(third, \.weight) == "60")
-    }
 }

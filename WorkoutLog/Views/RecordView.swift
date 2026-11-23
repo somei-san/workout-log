@@ -81,11 +81,13 @@ struct RecordView: View {
     @ScaledMetric(relativeTo: .title2) private var weightWidth: CGFloat = 66
     @ScaledMetric(relativeTo: .title2) private var repsWidth: CGFloat = 16
     @ScaledMetric(relativeTo: .subheadline) private var intensityWidth: CGFloat = 44
+    /// キーボードのツールバーの、キーボードの上端からボタンの上端までの高さ。iOS 26 のシミュレーターの画面で測った 50pt に、少し余白を足した
+    @ScaledMetric(relativeTo: .body) private var keyboardToolbarHeight: CGFloat = 56
 
     var body: some View {
         ScrollViewReader { proxy in
             list
-                // メモの欄は、欄に入ってもリストが送らず、キーボードに隠れる。キーボードが出たら、ボタンの並びの余白の上まで自分で送る。
+                // メモの欄は、欄に入ってもリストが送らず、キーボードに隠れる。キーボードが出たら、下に空けた余白の上まで自分で送る。
                 // 数字の欄からメモへ移るときはキーボードが出たままで、出たときの通知が来ないことがあるので、大きさが変わったときと欄に入ったときにも送る
                 .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)) { _ in
                     scrollToMemo(proxy)
@@ -174,16 +176,36 @@ struct RecordView: View {
                 }
             }
         }
-        // キーボードの上のボタンは、OS のキーボードのツールバーではなく画面の下に置く。
-        // ツールバーはキーボードにくっついて浮き、OS が打っている欄をツールバーの裏まで送るため、欄が隠れる。
-        // 画面の下に置くと、打っている欄はボタンの並びと余白のさらに上まで送られる
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if isKeyboardShown && model.isEditing {
-                keyboardBar
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                if let barFocus, model.isEditing {
+                    switch barFocus {
+                    case .weight:
+                        copyAboveButton(rowAbove?.weightValue.map(Format.weight), action: copyWeightAbove)
+                    case .reps:
+                        copyAboveButton(rowAbove?.repsValue.map(String.init), action: copyRepsAbove)
+                    case .intensity:
+                        EmptyView()
+                    }
+                    Spacer()
+                    Button(action: moveToNextField) {
+                        // 読み上げの名前は Button ではなく中の Image に付ける。キーボードのツールバーは、Button に付けた名前を画面に文字で出すため
+                        Image(systemName: isLastFieldOfRow ? "checkmark" : "arrow.right")
+                            .accessibilityLabel(isLastFieldOfRow ? "閉じる" : "次へ")
+                    }
+                    .tint(.accentColor)
+                }
             }
         }
-        // ボタンの並びは、キーボードと同じ時間をかけて出し入れする。すぐに出し入れすると、キーボードがまだ動いている間に並びだけが現れたり消えたりする
+        // キーボードのツールバーはキーボードの上に浮き、OS は打っている欄をツールバーの裏までしか送らないので、欄が隠れる。
+        // ツールバーの高さの分だけ下を空け、打っている欄がツールバーより上に来るようにする。
+        // ツールバーを出さないメモでも少し空ける。欄がキーボードにくっついて見えないようにするため
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if isKeyboardShown && model.isEditing {
+                Color.clear.frame(height: barFocus != nil ? keyboardToolbarHeight : 20)
+            }
+        }
+        // 下の余白は、キーボードと同じ時間をかけて出し入れする。すぐに出し入れすると、キーボードがまだ動いている間に一覧だけが跳ねる
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
             withAnimation(Self.keyboardAnimation(note)) { isKeyboardShown = true }
         }
@@ -328,53 +350,21 @@ struct RecordView: View {
             .background { Color.clear.contentShape(.rect).onTapGesture { focus = field } }
     }
 
-    /// キーボードのすぐ上に出すボタンの並び。打っている欄に効くボタンだけを出す。
-    /// メモではボタンを出さず、余白だけを取る。打っている行がキーボードにくっつかないようにするため
-    private var keyboardBar: some View {
-        VStack(spacing: 0) {
-            if let barFocus {
-                HStack(spacing: 8) {
-                    switch barFocus {
-                    case .weight:
-                        Button(copyAboveLabel(rowAbove?.weightValue.map(Format.weight)), action: copyWeightAbove)
-                            .disabled(rowAbove?.weightValue == nil)
-                            // ボタンは縮めない。縮められるままだと、右の Spacer に幅が余っていても、文字の大きいときにこのボタンの文字が 2 行に折り返す
-                            .fixedSize()
-                        Button("−2.5") { adjustWeight(-2.5) }.fixedSize()
-                        Button("＋2.5") { adjustWeight(2.5) }.fixedSize()
-                    case .reps:
-                        Button(copyAboveLabel(rowAbove?.repsValue.map(String.init)), action: copyRepsAbove)
-                            .disabled(rowAbove?.repsValue == nil)
-                            .fixedSize()
-                        Button("−1") { adjustReps(-1) }.fixedSize()
-                        Button("＋1") { adjustReps(1) }.fixedSize()
-                    case .intensity:
-                        EmptyView()
-                    }
-                    Spacer()
-                    Button(isLastFieldOfRow ? "閉じる" : "次へ", action: moveToNextField)
-                        .fontWeight(.semibold)
-                        .fixedSize()
+    /// 1 つ上の行の値を写すボタン。アイコンの横に写す値を出し、写す値が無ければ押せなくする。押す前に、何が入るか分かるようにするため。
+    /// アイコンは、いちばん下のセットを写す複製のボタンからプラスを外した形にする
+    private func copyAboveButton(_ value: String?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            // アイコンと値は Label ではなく横に並べる。キーボードのツールバーは、Label を渡すとアイコンしか出さない
+            HStack(spacing: 6) {
+                Image(systemName: "square.on.square")
+                    .accessibilityLabel("前回と同じ")
+                if let value {
+                    Text(value).monospacedDigit()
                 }
-                // ボタンを縮めないので、文字が大きいと 4 つのボタンが横幅をはみ出し、画面全体が横にずれる。xxLarge でもはみ出す
-                .dynamicTypeSize(...DynamicTypeSize.xLarge)
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.capsule)
-                .padding(8)
-                .background(.regularMaterial, in: .capsule)
-                .keepsKeyboardOnTap()
-                .padding(.horizontal, 12)
             }
         }
-        .padding(.top, 12)
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity)
-    }
-
-    /// 1 つ上の行の値を写すボタンの文字。写す値があれば「前回 102.5」の形でその値を出す。押す前に、何が入るか分かるようにするため。
-    /// 「前回と同じ（102.5）」のように値を後ろに添えると長く、キーボードの上のボタンの並びが折り返す
-    private func copyAboveLabel(_ value: String?) -> LocalizedStringKey {
-        if let value { "前回 \(value)" } else { "前回と同じ" }
+        .tint(.accentColor)
+        .disabled(value == nil)
     }
 
     private func setNumber(_ number: Int) -> some View {
@@ -445,7 +435,7 @@ struct RecordView: View {
             .font(.title2)
             .foregroundStyle(.primary)
             .frame(width: 52, height: 52)
-            .background(.fill.tertiary, in: .rect(cornerRadius: 14))
+            .contentShape(.rect)
     }
 
     private var dateText: String {
@@ -478,16 +468,6 @@ struct RecordView: View {
         model.duplicateLastSet()
     }
 
-    private func adjustWeight(_ delta: Double) {
-        guard let focus else { return }
-        model.adjustWeight(focus.rowId, by: delta)
-    }
-
-    private func adjustReps(_ delta: Int) {
-        guard let focus else { return }
-        model.adjustReps(focus.rowId, by: delta)
-    }
-
     /// 写したら次の欄へ移る。前回と同じ値なら、その欄で打つものは無いため
     private func copyWeightAbove() {
         guard let focus, model.copyWeightAbove(focus.rowId) else { return }
@@ -513,7 +493,7 @@ struct RecordView: View {
         }
     }
 
-    /// ボタンの並びに出すボタンを決める欄。キーボードが閉じ始めると focus は nil になるが、並びはキーボードと一緒に下がり終えるまで、閉じる前の欄のボタンを出しておく
+    /// キーボードのツールバーに出すボタンを決める欄。キーボードが閉じ始めると focus は nil になるが、ツールバーはキーボードと一緒に下がり終えるまで、閉じる前の欄のボタンを出しておく
     private var barFocus: Field? {
         focus ?? lastFocus
     }
@@ -526,7 +506,7 @@ struct RecordView: View {
         }
     }
 
-    /// ボタンの並びに出している欄の、1 つ上の行
+    /// キーボードのツールバーに出している欄の、1 つ上の行
     private var rowAbove: SetRow? {
         barFocus.flatMap { model.rowAbove($0.rowId) }
     }
