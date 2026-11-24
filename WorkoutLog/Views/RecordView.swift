@@ -310,6 +310,9 @@ struct RecordView: View {
                     .frame(minWidth: repsWidth, alignment: .trailing)
                 unit("回")
             }
+            // 重さ × 回数は、かたまりごと縮めない。縮められるままだと、右に空きがあっても 2 桁の回数が折り返す。
+            // 回数の数字だけを縮めないと、数字が最小の幅からはみ出して「×」と重なる
+            .fixedSize()
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
                 if let value = intensity == .rpe ? set.rpe.map(Format.weight) : intensity == .rir ? set.rir.map(String.init) : nil {
