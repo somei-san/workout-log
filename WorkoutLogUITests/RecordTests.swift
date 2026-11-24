@@ -54,8 +54,8 @@ final class RecordTests: XCTestCase {
 
     func test最後のセットからの経過時間を出し_種目の設定でオフにすると出さない() throws {
         try recordOneSet()
-        // UI テストは時刻を固定しているので、経過時間は 0 秒のまま
-        let elapsed = app.staticTexts["最後のセットから 0 分 0 秒"]
+        // 時刻を固定せずに起動しているので、秒数は確かめるときによって変わる。文言の先頭だけを確かめる
+        let elapsed = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "最後のセットから ")).firstMatch
         XCTAssertTrue(elapsed.waitToAppear(timeout: 5), "セットを作っても経過時間が出ない")
 
         app.buttons["BackButton"].firstMatch.tap()
