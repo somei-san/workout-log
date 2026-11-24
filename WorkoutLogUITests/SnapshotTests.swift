@@ -292,7 +292,8 @@ class SnapshotTests: XCTestCase {
         app.buttons["新しい記録"].tap()
         XCTAssertTrue(app.buttons["セットを追加"].waitToAppear(timeout: 5))
         try app.addSet(weight: "100", reps: "5")
-        try app.addSet(weight: "100", reps: "4")
+        // 回数は 2 桁にする。閲覧モードで折り返さずに 1 行で出ることを撮るため
+        try app.addSet(weight: "100", reps: "10")
 
         // 日付を前の月の 15 日にする。起動引数で今日を決めているので、撮る記録の日付は毎回同じになる
         app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "▾")).firstMatch.tap()
@@ -308,7 +309,7 @@ class SnapshotTests: XCTestCase {
 
         back()
         // ボリューム・推定 1RM・最大重量の行
-        let summary = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "900 ")).firstMatch
+        let summary = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "1500 ")).firstMatch
         guard summary.waitToAppear(timeout: 5) else { return XCTFail("種目の履歴に記録が出ない") }
         summary.tap()
         guard app.buttons["編集"].waitToAppear(timeout: 5) else { return XCTFail("前日以前の記録が閲覧モードで開かない") }
