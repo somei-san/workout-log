@@ -12,6 +12,7 @@ on:
       - '.gitignore'
       - 'scripts/test.sh'
       - 'scripts/make-icons.swift'
+      - '.github/dependabot.yml'
 
 # PR は最新の push の結果だけ見ればよいので、前の実行を止める。
 # main は push ごとに結果を残したいので、実行ごとに別のグループにして、待っている実行も取り消させない

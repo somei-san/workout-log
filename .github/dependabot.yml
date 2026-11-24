@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # CI が使う actions の版を上げる PR を作らせる。
+  # Swift のパッケージは project.yml に書いていて dependabot が読めないので、ここには入れない
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    # actions ごとに PR が分かれると、PR ごとに CI が 4 つのジョブで 15 分ほど回るので、1 つの PR にまとめる
+    groups:
+      actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "⬆️"
