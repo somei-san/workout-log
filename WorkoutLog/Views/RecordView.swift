@@ -81,6 +81,8 @@ struct RecordView: View {
     @ScaledMetric(relativeTo: .title2) private var weightWidth: CGFloat = 66
     @ScaledMetric(relativeTo: .title2) private var repsWidth: CGFloat = 16
     @ScaledMetric(relativeTo: .subheadline) private var intensityWidth: CGFloat = 44
+    /// セットの番号の幅。2 桁の番号が収まる幅
+    @ScaledMetric(relativeTo: .body) private var setNumberWidth: CGFloat = 24
     /// キーボードのツールバーの、キーボードの上端からボタンの上端までの高さ。iOS 26 のシミュレーターの画面で測った 50pt に、少し余白を足した
     @ScaledMetric(relativeTo: .body) private var keyboardToolbarHeight: CGFloat = 56
 
@@ -371,12 +373,13 @@ struct RecordView: View {
         .disabled(value == nil)
     }
 
+    /// セットの番号。数えやすいよう本文と同じ大きさにし、重さ × 回数より前に出ないよう細く薄くする
     private func setNumber(_ number: Int) -> some View {
         Text("\(number)")
-            .font(.footnote)
+            .font(.body.weight(.light))
             .monospacedDigit()
             .foregroundStyle(.tertiary)
-            .frame(width: 20, alignment: .leading)
+            .frame(width: setNumberWidth, alignment: .leading)
     }
 
     private func unit(_ text: String) -> some View {
